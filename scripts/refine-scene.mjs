@@ -1,0 +1,10 @@
+import fs from 'node:fs/promises';
+let scene=await fs.readFile('src/SceneGallery.jsx','utf8');
+scene=scene.replace('color:0x737e77','color:0x9aab9e').replace('color ) * .72','color ) * .92');
+await fs.writeFile('src/SceneGallery.jsx',scene);
+let main=await fs.readFile('src/main.jsx','utf8');
+const start=main.indexOf('<div className="detail-art">'),end=main.indexOf('<div className="detail-info">',start);
+if(start>=0&&end>start)main=main.slice(0,start)+main.slice(end);
+main=main.replace(" const add=(p,f,s,q)=>", " useLayoutEffect(()=>{if(product)setSceneBusy(true);},[product?.id]);\n const add=(p,f,s,q)=>");
+await fs.writeFile('src/main.jsx',main);
+console.log('Removed the separate close-up image layer; only the shared scene remains.');

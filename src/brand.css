@@ -1,0 +1,8 @@
+
+:root{scrollbar-gutter:stable}
+.brand-lockup{display:block;width:184px;height:auto;object-fit:contain;flex-shrink:0}
+.site-header .brand{display:block}.site-header .brand-lockup{width:182px}.header-expanded .brand-lockup{width:164px}.glass-footer .brand-lockup{width:183px}
+.scene-product-dialog .detail-wordmark{display:block;line-height:1}.scene-product-dialog .detail-wordmark .brand-lockup{width:182px}.admin-brand .brand-lockup{width:170px}.admin-brand small{white-space:nowrap}
+@media(max-width:1050px){.site-header .brand-lockup{width:160px}.header-expanded .brand-lockup{width:150px}}
+@media(max-width:700px){.site-header .brand-lockup,.header-expanded .brand-lockup{width:115px}.glass-footer .brand-lockup{width:162px}.scene-product-dialog .detail-wordmark .brand-lockup{width:123px}.admin-brand .brand-lockup{width:138px}}
+@media(max-width:365px){.site-header .brand-lockup,.header-expanded .brand-lockup{width:102px}.scene-product-dialog .detail-wordmark .brand-lockup{width:100px}}

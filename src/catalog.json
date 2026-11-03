@@ -1,0 +1,631 @@
+[
+  {
+    "id": "al-zaf",
+    "name": "AL-ZAF",
+    "subtitle": "(The Natural Simple Fusion)",
+    "image": "/products/al_zaf.png",
+    "oilImage": "/oils/al_zaf.png",
+    "description": "Jasmine and almond open into roasted coffee and cocoa, settling on warm amber and woods.",
+    "perfumePrice50ml": 2390,
+    "perfumePrice100ml": 3790,
+    "oilPrice6ml": 520,
+    "oilPrice12ml": 890,
+    "family": "Woody",
+    "gender": "Unisex",
+    "tags": [
+      "Best Seller",
+      "Signature"
+    ],
+    "notes": {
+      "top": "Sweet Jasmine, Almond, Coffee",
+      "heart": "Rich Cocoa, Stimulating Coumarin",
+      "base": "Shadowy & Sunny Woods, Warm Amber"
+    },
+    "performance": {
+      "longevity": "Long-lasting (10+ hours)",
+      "projection": "Strong (fills room)"
+    },
+    "bestFor": {
+      "time": [
+        "Day",
+        "Night"
+      ],
+      "seasons": [
+        "Autumn",
+        "Winter"
+      ],
+      "occasions": [
+        "Daily Wear",
+        "Special Events"
+      ]
+    },
+    "number": "01",
+    "artwork": "/assets/bottles/al-zaf-oil-v2.webp"
+  },
+  {
+    "id": "al-harun",
+    "name": "Al-Harun",
+    "subtitle": "(A Legacy in Every Drop)",
+    "image": "/products/al_harun.png",
+    "oilImage": "/oils/al_harun.png",
+    "description": "Leather and geranium give way to smoky cedar, with a soft finish of amber, musk and sandalwood.",
+    "perfumePrice50ml": 2990,
+    "perfumePrice100ml": 4490,
+    "oilPrice6ml": 710,
+    "oilPrice12ml": 1250,
+    "family": "Spicy",
+    "gender": "Men",
+    "tags": [
+      "Signature",
+      "Best Seller"
+    ],
+    "notes": {
+      "top": "Bold Leather, Geranium",
+      "heart": "Smoky Patchouli, Cedarwood",
+      "base": "Warm Amber, Soft Musk, Creamy Sandalwood, Earthy Moss"
+    },
+    "performance": {
+      "longevity": "Very Long-lasting (12+ hours)",
+      "projection": "Strong"
+    },
+    "bestFor": {
+      "time": [
+        "Night"
+      ],
+      "seasons": [
+        "Autumn",
+        "Winter"
+      ],
+      "occasions": [
+        "Professional Setting",
+        "Special Events"
+      ]
+    },
+    "number": "02",
+    "artwork": "/assets/bottles/al-harun-oil-v2.webp"
+  },
+  {
+    "id": "al-kamrah",
+    "name": "Lattafa Khamrah",
+    "subtitle": "(Sweet Memories Last Forever)",
+    "image": "/products/lattafa_khamrah.png",
+    "oilImage": "/oils/lattafa_khamrah.png",
+    "description": "Bergamot and cinnamon over dates and praline. Vanilla, amber and tonka bring a warm finish.",
+    "perfumePrice50ml": 3090,
+    "perfumePrice100ml": 4690,
+    "oilPrice6ml": 729,
+    "oilPrice12ml": 1290,
+    "family": "Sweet",
+    "gender": "Unisex",
+    "tags": [
+      "Best Seller"
+    ],
+    "notes": {
+      "top": "Peppery Bergamot, Touch of Cinnamon",
+      "heart": "Sticky Date, Buttery Praline",
+      "base": "Creamy Vanilla, Resinous Amber, Woody Tonka Bean"
+    },
+    "performance": {
+      "longevity": "Very Long-lasting (12+ hours)",
+      "projection": "Strong"
+    },
+    "bestFor": {
+      "time": [
+        "Night"
+      ],
+      "seasons": [
+        "Autumn",
+        "Winter"
+      ],
+      "occasions": [
+        "Date Night",
+        "Evening Wear"
+      ]
+    },
+    "number": "03",
+    "artwork": "/assets/bottles/al-kamrah-oil-v2.webp"
+  },
+  {
+    "id": "almarziyah",
+    "name": "Al Marziyah",
+    "subtitle": "(A Harmony of Rose, Oud & Royal Elegance)",
+    "image": "/products/al_marziyah.png",
+    "oilImage": "/oils/al_marziyah.png",
+    "description": "Juicy fruit and soft blossom meet dark leather, warm woods and oud.",
+    "perfumePrice50ml": 2890,
+    "perfumePrice100ml": 4390,
+    "oilPrice6ml": 680,
+    "oilPrice12ml": 1190,
+    "family": "Floral",
+    "gender": "Unisex",
+    "tags": [
+      "Signature"
+    ],
+    "notes": {
+      "top": "Juicy Fruits, Sunset Accords",
+      "heart": "Floral Heart, Sweet Blossom",
+      "base": "Warm Woody Base, Dark Leather, Precious Oud"
+    },
+    "performance": {
+      "longevity": "Long-lasting (8-10 hours)",
+      "projection": "Moderate"
+    },
+    "bestFor": {
+      "time": [
+        "Day",
+        "Night"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer",
+        "Autumn"
+      ],
+      "occasions": [
+        "Daily Wear",
+        "Professional Setting"
+      ]
+    },
+    "number": "04",
+    "artwork": "/assets/bottles/almarziyah-oil-v2.webp"
+  },
+  {
+    "id": "almarj",
+    "name": "Al Marj",
+    "subtitle": "(The Essence of Green Oasis)",
+    "image": "/products/al_marj.png",
+    "oilImage": "/oils/al_marj.png",
+    "description": "Raspberry and pear unfold into honey and delicate florals, grounded by leather and warm woods.",
+    "perfumePrice50ml": 2750,
+    "perfumePrice100ml": 4150,
+    "oilPrice6ml": 620,
+    "oilPrice12ml": 1090,
+    "family": "Woody",
+    "gender": "Unisex",
+    "tags": [
+      "Signature",
+      "New Arrival"
+    ],
+    "notes": {
+      "top": "Sweet Raspberry, Pear, Tropical Fruits",
+      "heart": "Pure Honey, Delicate Florals",
+      "base": "Refined Leather, Rich Woods, Warm Spice"
+    },
+    "performance": {
+      "longevity": "Very Long-lasting (12+ hours)",
+      "projection": "Strong"
+    },
+    "bestFor": {
+      "time": [
+        "Night"
+      ],
+      "seasons": [
+        "Winter",
+        "Autumn"
+      ],
+      "occasions": [
+        "Evening Wear",
+        "Special Events"
+      ]
+    },
+    "number": "05",
+    "artwork": "/assets/bottles/almarj-oil-v2.webp"
+  },
+  {
+    "id": "summer-oud",
+    "name": "Summer Oud",
+    "subtitle": "(The Natural Simple Fusion)",
+    "image": "/products/summer_oud.png",
+    "description": "A fresh citrus opening lifts traditional oud, with a warm floral heart and soft leather finish.",
+    "perfumePrice50ml": 2890,
+    "perfumePrice100ml": 4390,
+    "oilPrice6ml": 650,
+    "oilPrice12ml": 1150,
+    "family": "Woody",
+    "gender": "Unisex",
+    "tags": [
+      "Best Seller",
+      "New Arrival"
+    ],
+    "notes": {
+      "top": "Zesty Sunlit Citrus, Spiced Kick",
+      "heart": "Warm Floral Sweetness",
+      "base": "Deep Traditional Oud, Leather-Soft Wood"
+    },
+    "performance": {
+      "longevity": "Very Long-lasting (12+ hours)",
+      "projection": "Strong (fills room)"
+    },
+    "bestFor": {
+      "time": [
+        "Day",
+        "Night"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer"
+      ],
+      "occasions": [
+        "Daily Wear",
+        "Special Events"
+      ]
+    },
+    "number": "06",
+    "artwork": "/assets/bottles/summer-oud-oil-v2.webp"
+  },
+  {
+    "id": "delighted-dior",
+    "name": "Delighted Dior",
+    "subtitle": "(The Natural Simple Fusion)",
+    "image": "/products/delighted_dior.png",
+    "description": "Blood orange, plum and red berries soften into musk, vanilla and warm woods.",
+    "perfumePrice50ml": 2690,
+    "perfumePrice100ml": 3990,
+    "oilPrice6ml": 579,
+    "oilPrice12ml": 990,
+    "family": "Spicy",
+    "gender": "Unisex",
+    "tags": [
+      "Signature",
+      "Best Seller"
+    ],
+    "notes": {
+      "top": "Blood Orange, Dark Plum, Red Berries",
+      "heart": "Metallic Intrigue, Soft Seductive Musk",
+      "base": "Madagascar Vanilla, Warm Woody Notes"
+    },
+    "performance": {
+      "longevity": "Long-lasting (10+ hours)",
+      "projection": "Moderate to Strong"
+    },
+    "bestFor": {
+      "time": [
+        "Night"
+      ],
+      "seasons": [
+        "Autumn",
+        "Winter"
+      ],
+      "occasions": [
+        "Date Night",
+        "Evening Wear"
+      ]
+    },
+    "number": "07",
+    "artwork": "/assets/bottles/delighted-dior-oil-v2.webp"
+  },
+  {
+    "id": "canadian-lemon",
+    "name": "Canadian Lemon",
+    "subtitle": "(The Natural Simple Fusion)",
+    "image": "/products/canadian_lemon.png",
+    "description": "Lemon and ripe peach brighten cherry blossom and jasmine, over airy musk and cedar.",
+    "perfumePrice50ml": 2490,
+    "perfumePrice100ml": 3790,
+    "oilPrice6ml": 540,
+    "oilPrice12ml": 920,
+    "family": "Citrus",
+    "gender": "Unisex",
+    "tags": [
+      "New Arrival"
+    ],
+    "notes": {
+      "top": "Zesty Lemon Burst, Ripe Peach",
+      "heart": "Breezy Cherry Blossom, White Jasmine",
+      "base": "Light Airy Musk, Soft Cedar"
+    },
+    "performance": {
+      "longevity": "Moderate (6-8 hours)",
+      "projection": "Moderate"
+    },
+    "bestFor": {
+      "time": [
+        "Day"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer"
+      ],
+      "occasions": [
+        "Daily Wear",
+        "Relaxing at Home"
+      ]
+    },
+    "number": "08",
+    "artwork": "/assets/bottles/canadian-lemon-oil-v2.webp"
+  },
+  {
+    "id": "erba-pura",
+    "name": "Erba Pura",
+    "subtitle": "(The Entire Pure Combination)",
+    "image": "/products/erba_pura.png",
+    "description": "Sicilian citrus and sun-ripened fruit settle into white musk, vanilla and amber.",
+    "perfumePrice50ml": 2990,
+    "perfumePrice100ml": 4490,
+    "oilPrice6ml": 690,
+    "oilPrice12ml": 1190,
+    "family": "Citrus",
+    "gender": "Unisex",
+    "tags": [
+      "Best Seller",
+      "New Arrival"
+    ],
+    "notes": {
+      "top": "Sicilian Orange, Sicilian Lemon, Calabrian Bergamot",
+      "heart": "Luscious Sun-Ripened Mediterranean Fruits",
+      "base": "Plush White Musk, Madagascar Vanilla, Warm Amber"
+    },
+    "performance": {
+      "longevity": "Very Long-lasting (12+ hours)",
+      "projection": "Strong (fills room)"
+    },
+    "bestFor": {
+      "time": [
+        "Day",
+        "Night"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer"
+      ],
+      "occasions": [
+        "Daily Wear",
+        "Special Events"
+      ]
+    },
+    "number": "09",
+    "artwork": "/assets/bottles/erba-pura-oil-v2.webp"
+  },
+  {
+    "id": "wardha-of-arab",
+    "name": "Wardha Of Arab",
+    "subtitle": "(The Natural Simple Fusion)",
+    "image": "/products/wardha_of_arab.png",
+    "description": "Dewy fruit and creamy white petals, with a gentle amber and wood finish.",
+    "perfumePrice50ml": 2790,
+    "perfumePrice100ml": 4190,
+    "oilPrice6ml": 610,
+    "oilPrice12ml": 1050,
+    "family": "Floral",
+    "gender": "Unisex",
+    "tags": [
+      "Signature",
+      "New Arrival"
+    ],
+    "notes": {
+      "top": "Soft Juicy Fruitiness, Dewy Petals",
+      "heart": "Creamy White & Golden Petals",
+      "base": "Luminous Amber, Gentle Wood"
+    },
+    "performance": {
+      "longevity": "Long-lasting (8-10 hours)",
+      "projection": "Moderate"
+    },
+    "bestFor": {
+      "time": [
+        "Day",
+        "Night"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer"
+      ],
+      "occasions": [
+        "Daily Wear",
+        "Professional Setting"
+      ]
+    },
+    "number": "10",
+    "artwork": "/assets/bottles/wardha-of-arab-oil-v2.webp"
+  },
+  {
+    "id": "flower-jazz",
+    "name": "Flower Jazz",
+    "subtitle": "(Jasmin: Feel It Real - The Natural Simple Fusion)",
+    "image": "/products/flower_jazz.png",
+    "oilImage": "/oils/jasmine.png",
+    "description": "A citrus opening gives way to jasmine sambac, softened by earthy amber and vanilla.",
+    "perfumePrice50ml": 2590,
+    "perfumePrice100ml": 3990,
+    "oilPrice6ml": 569,
+    "oilPrice12ml": 990,
+    "family": "Floral",
+    "gender": "Unisex",
+    "tags": [
+      "Best Seller",
+      "Signature"
+    ],
+    "notes": {
+      "top": "Lively Citrus Lift, Dewy Morning Breeze",
+      "heart": "Lush Royal Jasmine Sambac, Clean Modern Floral",
+      "base": "Soft Earthy Warmth, Gentle Amber & Vanilla"
+    },
+    "performance": {
+      "longevity": "Long-lasting (8-10 hours)",
+      "projection": "Moderate"
+    },
+    "bestFor": {
+      "time": [
+        "Day",
+        "Night"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer"
+      ],
+      "occasions": [
+        "Daily Wear",
+        "Special Events"
+      ]
+    },
+    "number": "11",
+    "artwork": "/assets/bottles/flower-jazz-oil-v2.webp"
+  },
+  {
+    "id": "althair-pdm",
+    "name": "Althaïr",
+    "subtitle": "(Parfums de Marly - The Natural Simple Fusion)",
+    "image": "/products/althair_pdm.png",
+    "description": "Orange flower, cardamom and cinnamon wrap around bourbon vanilla and soft guaiac wood.",
+    "perfumePrice50ml": 2790,
+    "perfumePrice100ml": 4190,
+    "oilPrice6ml": 629,
+    "oilPrice12ml": 1090,
+    "family": "Sweet",
+    "gender": "Unisex",
+    "tags": [
+      "New Arrival",
+      "Signature"
+    ],
+    "notes": {
+      "top": "Orange Flower, Bergamot, Cardamom, Whisper of Cinnamon",
+      "heart": "Bourbon Vanilla, Deep Spicy Accords",
+      "base": "Addictive Warm Vanilla, Guaiac Wood, Soft Musk"
+    },
+    "performance": {
+      "longevity": "Long-lasting (10+ hours)",
+      "projection": "Moderate to Strong"
+    },
+    "bestFor": {
+      "time": [
+        "Night"
+      ],
+      "seasons": [
+        "Autumn",
+        "Winter"
+      ],
+      "occasions": [
+        "Date Night",
+        "Evening Wear"
+      ]
+    },
+    "number": "12",
+    "artwork": "/assets/bottles/althair-pdm-oil-v2.webp"
+  },
+  {
+    "id": "pistachio-gelato",
+    "name": "Pistachio Gelato",
+    "subtitle": "(Kayali Yum 33 - Flirty Gourmand Indulgence)",
+    "image": "/products/pistachio_gelato.png",
+    "description": "Pistachio and roasted hazelnut meet whipped cream, jasmine and a soft marshmallow finish.",
+    "perfumePrice50ml": 2690,
+    "perfumePrice100ml": 3990,
+    "oilPrice6ml": 579,
+    "oilPrice12ml": 990,
+    "family": "Sweet",
+    "gender": "Unisex",
+    "tags": [
+      "Best Seller",
+      "New Arrival"
+    ],
+    "notes": {
+      "top": "Pistachio, Roasted Hazelnut, Italian Bergamot",
+      "heart": "Whipped Cream, White Jasmine, Raspberry, Peach",
+      "base": "Pillowy Marshmallow, Spun Sugar, Sandalwood"
+    },
+    "performance": {
+      "longevity": "Long-lasting (8-10 hours)",
+      "projection": "Moderate"
+    },
+    "bestFor": {
+      "time": [
+        "Day",
+        "Night"
+      ],
+      "seasons": [
+        "Spring",
+        "Summer",
+        "Autumn"
+      ],
+      "occasions": [
+        "Daily Wear",
+        "Relaxing at Home"
+      ]
+    },
+    "number": "13",
+    "artwork": "/assets/bottles/pistachio-gelato-oil-v2.webp"
+  },
+  {
+    "id": "sheikh-musk",
+    "name": "Sheikh Musk",
+    "subtitle": "(A Royal Blend - The Natural Simple Fusion)",
+    "image": "/products/sheikh_musk.png",
+    "description": "Warm vanilla and amber unfold into smoky woods, sensual musk and creamy sandalwood.",
+    "perfumePrice50ml": 2990,
+    "perfumePrice100ml": 4490,
+    "oilPrice6ml": 710,
+    "oilPrice12ml": 1250,
+    "family": "Spicy",
+    "gender": "Unisex",
+    "tags": [
+      "Signature",
+      "Best Seller"
+    ],
+    "notes": {
+      "top": "Generous Edible Sweetness, Warm Vanilla, Amber",
+      "heart": "Grounding Smoky Undertones, Dark Woody Backbone",
+      "base": "Plush Sensual Musk, Creamy Sandalwood"
+    },
+    "performance": {
+      "longevity": "Very Long-lasting (12+ hours)",
+      "projection": "Strong"
+    },
+    "bestFor": {
+      "time": [
+        "Night"
+      ],
+      "seasons": [
+        "Autumn",
+        "Winter"
+      ],
+      "occasions": [
+        "Date Night",
+        "Evening Wear"
+      ]
+    },
+    "number": "14",
+    "artwork": "/assets/bottles/sheikh-musk-oil-v2.webp"
+  },
+  {
+    "id": "tam-dao",
+    "name": "Tam Dao",
+    "subtitle": "(Diptyque - The Natural Simple Fusion)",
+    "image": "/products/tam_dao.png",
+    "description": "Cypress and cedar frame smooth sandalwood, with an earthy trail of incense and smoky woods.",
+    "perfumePrice50ml": 2890,
+    "perfumePrice100ml": 4390,
+    "oilPrice6ml": 680,
+    "oilPrice12ml": 1190,
+    "family": "Woody",
+    "gender": "Unisex",
+    "tags": [
+      "Signature",
+      "New Arrival"
+    ],
+    "notes": {
+      "top": "Austere Cypress, Dusty Cedar Grain, Fresh Spice",
+      "heart": "Milky Smooth Sandalwood, Sacred Grove Accords",
+      "base": "Ancient Incense, Earthy Smoky Woods"
+    },
+    "performance": {
+      "longevity": "Long-lasting (10+ hours)",
+      "projection": "Moderate"
+    },
+    "bestFor": {
+      "time": [
+        "Day",
+        "Night"
+      ],
+      "seasons": [
+        "Autumn",
+        "Winter",
+        "Spring"
+      ],
+      "occasions": [
+        "Daily Wear",
+        "Professional Setting"
+      ]
+    },
+    "number": "15",
+    "artwork": "/assets/bottles/tam-dao-oil-v2.webp"
+  }
+]
