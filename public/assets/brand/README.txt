@@ -16,9 +16,10 @@ Ivory #EFEADE
 Champagne gold #C7B385
 Deep green #11291F
 
-The geometric emblem follows the star motif on the existing NURA bottles.
-Wordmark typography: Cormorant Garamond, carefully spaced.
-Byline typography: Manrope.
-Font licenses (SIL Open Font License) are included in this folder.
+The star emblem, NURA lettering and byline are traced directly from the
+user-supplied brand reference, using the established website palette.
+Regenerate the vectors with python scripts/trace-brand.py, and the PNG
+exports with node scripts/export-brand.mjs. Fragrance names use outlined
+Cormorant Garamond; its SIL Open Font License is included.
 
 The website intro uses the same vector paths, with a brief emblem/wordmark reveal.

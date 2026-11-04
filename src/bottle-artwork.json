@@ -1,0 +1,62 @@
+{
+  "al-zaf": {
+    "oil": "/assets/bottles/al-zaf-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/al-zaf-perfume-brand-v5.webp"
+  },
+  "al-harun": {
+    "oil": "/assets/bottles/al-harun-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/al-harun-perfume-brand-v5.webp"
+  },
+  "al-kamrah": {
+    "oil": "/assets/bottles/al-kamrah-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/al-kamrah-perfume-brand-v5.webp"
+  },
+  "almarziyah": {
+    "oil": "/assets/bottles/almarziyah-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/almarziyah-perfume-brand-v5.webp"
+  },
+  "almarj": {
+    "oil": "/assets/bottles/almarj-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/almarj-perfume-brand-v5.webp"
+  },
+  "summer-oud": {
+    "oil": "/assets/bottles/summer-oud-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/summer-oud-perfume-brand-v5.webp"
+  },
+  "delighted-dior": {
+    "oil": "/assets/bottles/delighted-dior-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/delighted-dior-perfume-brand-v5.webp"
+  },
+  "canadian-lemon": {
+    "oil": "/assets/bottles/canadian-lemon-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/canadian-lemon-perfume-brand-v5.webp"
+  },
+  "erba-pura": {
+    "oil": "/assets/bottles/erba-pura-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/erba-pura-perfume-brand-v5.webp"
+  },
+  "wardha-of-arab": {
+    "oil": "/assets/bottles/wardha-of-arab-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/wardha-of-arab-perfume-brand-v5.webp"
+  },
+  "flower-jazz": {
+    "oil": "/assets/bottles/flower-jazz-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/flower-jazz-perfume-brand-v5.webp"
+  },
+  "althair-pdm": {
+    "oil": "/assets/bottles/althair-pdm-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/althair-pdm-perfume-brand-v5.webp"
+  },
+  "pistachio-gelato": {
+    "oil": "/assets/bottles/pistachio-gelato-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/pistachio-gelato-perfume-brand-v5.webp"
+  },
+  "sheikh-musk": {
+    "oil": "/assets/bottles/sheikh-musk-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/sheikh-musk-perfume-brand-v5.webp"
+  },
+  "tam-dao": {
+    "oil": "/assets/bottles/tam-dao-oil-brand-v5.webp",
+    "perfume": "/assets/bottles/tam-dao-perfume-brand-v5.webp"
+  }
+}

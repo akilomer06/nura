@@ -2,12 +2,15 @@ import React,{useState,useEffect,useRef,useMemo,useLayoutEffect,createContext,us
 import {ArrowLeft,ArrowRight,ArrowDown,ArrowUpRight,X,Plus,Minus,Search,SlidersHorizontal,Menu,ShoppingBag,Check,MessageCircle,Mail,ChevronDown,RotateCcw} from 'lucide-react';
 import {StoreProvider,useStore,CurrencySelect} from './store.jsx';
 import BrandLogo from './BrandLogo.jsx';
+import {bottleArtwork} from './bottle-artwork.mjs';
+import {browseFormat} from './browse-format.mjs';
 import './brand.css';
 const Admin=React.lazy(()=>import('./Admin.jsx'));
 import {FORMATS,variantPrice,addItem,restoreCart,cartTotal,filterProducts,recommend} from './domain.mjs';
 import {pages,mainLinks,supportLinks} from './content.js';
 import './styles.css';
 import SceneGallery from './SceneGallery.jsx';
+import HeroStory from './HeroStory.jsx';
 import {FEATURED_IDS,featuredProducts,shelfHeight,homeRevealLayers,clampReveal,HOME_REVEAL_SCREENS,HOME_HOLD_SCREENS} from './collection-layout.mjs';
 import './scene.css';
 import './collection-pages.css';
@@ -16,6 +19,7 @@ import './home-experience.css';
 const Navigation=createContext(null);
 const scrollBehavior=()=>matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth';
 const initialLocation=()=>location.pathname+location.search;
+const initialBrowseFormat=()=>{let saved='oil';try{saved=sessionStorage.getItem('nura-browse-format')||'oil';}catch{}return browseFormat(location.pathname,location.search,saved);};
 function Link({to,children,onClick,...props}){const navigate=useContext(Navigation);return <a href={to} {...props} onClick={e=>{onClick?.(e);if(!e.defaultPrevented&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&e.button===0){e.preventDefault();navigate(to);}}}>{children}</a>;}
 function Brand(){return <Link to="/" className="brand" aria-label="NURA home"><BrandLogo/></Link>;}
 function Eyebrow({children,...props}){return <p className="eyebrow" {...props}>{children}</p>;}
@@ -36,45 +40,45 @@ function useModal(ref,onClose){
  },[]);
 }
 function Modal({title,onClose,children,className=''}){const ref=useRef(null);useModal(ref,onClose);return <div className={`modal-backdrop ${className.includes('scene-product-dialog')?'scene-product-backdrop':''}`} onClick={e=>{if(e.target===e.currentTarget)onClose();}}><section className={`modal ${className}`} role="dialog" aria-modal="true" aria-label={title} ref={ref} tabIndex={-1}>{children}</section></div>;}
-function Bottle({product,reflection=false,large=false,eager=false}){
+function Bottle({product,reflection=false,large=false,eager=false,format='oil'}){
+ const artwork=bottleArtwork(product,format);
  const [failed,setFailed]=useState(false);
- useEffect(()=>setFailed(false),[product.id]);
- if(failed)return <div className="bottle-unavailable"><span>NURA</span><small>{product.name}</small><span className="image-note">Image unavailable</span></div>;
- return <img className={`bottle ${reflection?'bottle-reflection':''} ${large?'bottle-large':''}`} src={product.artwork} srcSet={product.artwork.startsWith('/assets/bottles/')?`${product.artwork.replace('.webp','-small.webp')} 220w, ${product.artwork} 500w`:undefined} sizes={large?'(max-width: 700px) 60vw, 25vw':'(max-width: 700px) 50vw, 17vw'} alt={reflection?'':`${product.name} — NURA bottle`} aria-hidden={reflection||undefined} loading={eager?'eager':'lazy'} fetchPriority={eager?'high':'auto'} onError={()=>setFailed(true)} draggable={false}/>;
+ useEffect(()=>setFailed(false),[product.id,artwork]);
+ if(failed)return <div className="bottle-unavailable"><BrandLogo/><small>{product.name}</small><span className="image-note">Image unavailable</span></div>;
+ return <img className={`bottle ${reflection?'bottle-reflection':''} ${large?'bottle-large':''}`} src={artwork} srcSet={artwork.startsWith('/assets/bottles/')?`${artwork.replace('.webp','-small.webp')} 220w, ${artwork} 500w`:undefined} sizes={large?'(max-width: 700px) 60vw, 25vw':'(max-width: 700px) 50vw, 17vw'} alt={reflection?'':`${product.name} — NURA bottle`} aria-hidden={reflection||undefined} loading={eager?'eager':'lazy'} fetchPriority={eager?'high':'auto'} onError={()=>setFailed(true)} draggable={false}/>;
 }
 function Quantity({value,onChange,label='Quantity'}){return <div className="quantity" aria-label={label}><button aria-label={`Decrease ${label.toLowerCase()}`} disabled={value<=1} onClick={()=>onChange(Math.max(1,value-1))}><Minus size={13}/></button><output aria-label={label}>{value}</output><button aria-label={`Increase ${label.toLowerCase()}`} disabled={value>=99} onClick={()=>onChange(Math.min(99,value+1))}><Plus size={13}/></button></div>;}
 
 function Header({expanded,bagCount,onMenu,onBag,onFilter,count}){return <header className={`site-header ${expanded?'header-expanded':''}`}><Brand/><nav className="scroll-nav" aria-label="Main navigation">{mainLinks.map(([url,label])=><Link key={url} to={url}>{label}</Link>)}</nav><div className="header-tools">{onFilter&&<button className="filter-trigger" onClick={onFilter}><SlidersHorizontal size={14}/><span>Explore & filter</span><small>{count}</small></button>}<CurrencySelect/><div className="header-actions"><button onClick={onMenu} className="menu-toggle" aria-label="Open menu"><Menu size={17}/><span>Menu</span></button><span className="header-divider"/><button className="bag-toggle" onClick={onBag} aria-label={`Open bag, ${bagCount} items`}><span>Bag</span><span className="bag-count">{bagCount}</span></button></div></div></header>;}
 function MenuPanel({onClose}){return <Modal title="Navigation menu" onClose={onClose} className="menu-panel"><div className="panel-top"><span className="eyebrow">NURA / EXPLORE</span><IconButton label="Close menu" onClick={onClose}><X size={22}/></IconButton></div><nav className="large-menu">{mainLinks.map(([url,label],i)=><Link key={url} to={url} onClick={onClose}><small>0{i+1}</small>{label}<ArrowUpRight size={22}/></Link>)}</nav><div className="menu-secondary"><Link to="/perfume" onClick={onClose}>Perfumes</Link><Link to="/perfume-oil" onClick={onClose}>Perfume oils</Link><Link to="/bespoke" onClick={onClose}>Bespoke Experience</Link><Link to="/admin" onClick={onClose}>Catalog studio</Link>{supportLinks.map(([url,label])=><Link key={url} to={url} onClick={onClose}>{label}</Link>)}</div><a className="menu-contact" href="https://wa.me/919003954228" target="_blank" rel="noreferrer">A personal conversation <ArrowUpRight size={17}/></a></Modal>;}
-function Bag({cart,setCart,onClose}){const {products,money,orderUrl,currency}=useStore();const total=cartTotal(cart,products);return <Modal title="Your bag" onClose={onClose} className="bag-panel"><div className="panel-top"><h2>Your bag <sup>{cart.reduce((n,i)=>n+i.quantity,0)}</sup></h2><IconButton label="Close bag" onClick={onClose}><X size={22}/></IconButton></div>{cart.length?<><div className="bag-items">{cart.map(item=>{const product=products.find(p=>p.id===item.id);return <article className="bag-item" key={item.key}><Link to={`/products/${product.id}?format=${item.format}&size=${item.size}`} onClick={onClose} className="bag-art"><Bottle product={product}/></Link><div className="bag-item-info"><Link to={`/products/${product.id}?format=${item.format}&size=${item.size}`} onClick={onClose}><h3>{product.name}</h3></Link><p>{FORMATS[item.format].label} · {item.size} ml</p><span>{money(variantPrice(product,item.format,item.size)*item.quantity)}</span><div className="bag-item-controls"><Quantity label={`${product.name} quantity`} value={item.quantity} onChange={quantity=>setCart(cart.map(i=>i.key===item.key?{...i,quantity}:i))}/><button className="subtle-button" onClick={()=>setCart(cart.filter(i=>i.key!==item.key))} aria-label={`Remove ${product.name}, ${FORMATS[item.format].label}, ${item.size} ml`}>Remove</button></div></div></article>;})}</div><div className="bag-bottom"><div className="subtotal"><span>Item subtotal</span><strong>{money(total)}</strong></div><p>Availability and shipping confirmed personally.{currency!=='INR'&&' Indicative conversion; final quote in INR.'}</p><a className="primary-button" href={orderUrl(cart)} target="_blank" rel="noreferrer">Order on WhatsApp <MessageCircle size={18}/></a><span className="bag-disclaimer">Your message opens in WhatsApp. Send it when you’re ready.</span></div></>:<div className="empty-bag"><ShoppingBag size={34} strokeWidth={1}/><h3>A little space for<br/><i>something personal.</i></h3><p>Your bag is empty. Explore the collection<br/>and find a fragrance to make your own.</p><button className="text-link" onClick={onClose}>Return to the collection <ArrowRight size={17}/></button></div>}</Modal>;}
+function Bag({cart,setCart,onClose}){const {products,money,orderUrl,currency}=useStore();const total=cartTotal(cart,products);return <Modal title="Your bag" onClose={onClose} className="bag-panel"><div className="panel-top"><h2>Your bag <sup>{cart.reduce((n,i)=>n+i.quantity,0)}</sup></h2><IconButton label="Close bag" onClick={onClose}><X size={22}/></IconButton></div>{cart.length?<><div className="bag-items">{cart.map(item=>{const product=products.find(p=>p.id===item.id);return <article className="bag-item" key={item.key}><Link to={`/products/${product.id}?format=${item.format}&size=${item.size}`} onClick={onClose} className="bag-art"><Bottle product={product} format={item.format}/></Link><div className="bag-item-info"><Link to={`/products/${product.id}?format=${item.format}&size=${item.size}`} onClick={onClose}><h3>{product.name}</h3></Link><p>{FORMATS[item.format].label} · {item.size} ml</p><span>{money(variantPrice(product,item.format,item.size)*item.quantity)}</span><div className="bag-item-controls"><Quantity label={`${product.name} quantity`} value={item.quantity} onChange={quantity=>setCart(cart.map(i=>i.key===item.key?{...i,quantity}:i))}/><button className="subtle-button" onClick={()=>setCart(cart.filter(i=>i.key!==item.key))} aria-label={`Remove ${product.name}, ${FORMATS[item.format].label}, ${item.size} ml`}>Remove</button></div></div></article>;})}</div><div className="bag-bottom"><div className="subtotal"><span>Item subtotal</span><strong>{money(total)}</strong></div><p>Availability and shipping confirmed personally.{currency!=='INR'&&' Indicative conversion; final quote in INR.'}</p><a className="primary-button" href={orderUrl(cart)} target="_blank" rel="noreferrer">Order on WhatsApp <MessageCircle size={18}/></a><span className="bag-disclaimer">Your message opens in WhatsApp. Send it when you’re ready.</span></div></>:<div className="empty-bag"><ShoppingBag size={34} strokeWidth={1}/><h3>A little space for<br/><i>something personal.</i></h3><p>Your bag is empty. Explore the collection<br/>and find a fragrance to make your own.</p><button className="text-link" onClick={onClose}>Return to the collection <ArrowRight size={17}/></button></div>}</Modal>;}
 
-function HomeExperience({format,selectedId,onSceneMotion}){
+function HomeExperience({format,selectedFormat,selectedId,onSceneMotion,restorePosition=0}){
  const {products,setSceneReady}=useStore(),navigate=useContext(Navigation);
  const featured=useMemo(()=>featuredProducts(products),[products]);
  const [reduced,setReduced]=useState(()=>matchMedia('(prefers-reduced-motion: reduce)').matches),[fallback,setFallback]=useState(false),[ready,setReady]=useState(false);
  const initialEnd=!!selectedId||location.hash==='#featured-perfumes';
+ const openingEnabled=useRef(!initialEnd&&scrollY<1&&restorePosition<1).current;
  const [phase,setPhase]=useState(initialEnd?'collection':'stone');
- const [chapter,setChapter]=useState(initialEnd?5:0),chapterRef=useRef(initialEnd?5:0);
- const track=useRef(),stage=useRef(),reveal=useRef(initialEnd?1:0),phaseRef=useRef(phase),sceneReady=useRef(false),pendingFocus=useRef(false);
+ const track=useRef(),stage=useRef(),story=useRef(),reveal=useRef(initialEnd?1:0),phaseRef=useRef(phase),sceneReady=useRef(false),pendingFocus=useRef(false);
  const metrics=useRef({top:0,height:innerHeight,outro:0}),selection=useRef(selectedId),staticRef=useRef(false);
  const staticMode=reduced||fallback||featured.length===0;selection.current=selectedId;staticRef.current=staticMode;
  useEffect(()=>{const media=matchMedia('(prefers-reduced-motion: reduce)'),change=()=>setReduced(media.matches);media.addEventListener('change',change);return()=>media.removeEventListener('change',change);},[]);
- const updateLayers=React.useCallback((value,cameraMoving=false)=>{
+ const updateLayers=React.useCallback((value,cameraMoving=false,openingProgress=1)=>{
   if(!track.current)return;
   const layers=homeRevealLayers(value),outro=selection.current?0:metrics.current.outro;
+  story.current?.setProgress(staticRef.current?0:layers.storyProgress,openingProgress);
   track.current.style.setProperty('--home-progress',String(value));
   track.current.style.setProperty('--home-brand-opacity',String(layers.brandOpacity));
   track.current.style.setProperty('--home-edit-opacity',String(layers.collectionOpacity*(1-outro)*(cameraMoving?0:1)));
   track.current.style.setProperty('--home-label-opacity',String(layers.collectionOpacity));
-  track.current.style.setProperty('--home-chapter-opacity',String(layers.chapterOpacity));
-  if(chapterRef.current!==layers.chapter){chapterRef.current=layers.chapter;setChapter(layers.chapter);}
   track.current.dataset.revealProgress=value.toFixed(4);
-  const next=selection.current?'collection':layers.selectionReady&&sceneReady.current&&!cameraMoving&&outro<.98?'collection':layers.brandOpacity>0?'stone':outro>=.98?'footer':'transition';
+  const next=selection.current?'collection':layers.selectionReady&&sceneReady.current&&!cameraMoving&&outro<.98?'collection':layers.brandOpacity>=.5?'stone':outro>=.98?'footer':'transition';
   if(phaseRef.current!==next){phaseRef.current=next;setPhase(next);}
   if(next==='collection'&&pendingFocus.current){pendingFocus.current=false;requestAnimationFrame(()=>track.current?.querySelector('.scene-zone:not(:disabled),.home-static-niche')?.focus({preventScroll:true}));}
  },[]);
  const explore=React.useCallback((behavior='smooth')=>{
-  if(staticRef.current){const el=document.getElementById('featured-perfumes');if(el)window.scrollTo({top:el.getBoundingClientRect().top+scrollY-90,behavior:'instant'});return;}
+  if(staticRef.current){const el=document.getElementById('featured-perfumes');if(el){window.scrollTo({top:el.getBoundingClientRect().top+scrollY-90,behavior:'instant'});if(pendingFocus.current){pendingFocus.current=false;requestAnimationFrame(()=>el.querySelector('button')?.focus({preventScroll:true}));}}return;}
   const {top,height}=metrics.current;if(behavior==='instant')reveal.current=1;
   window.scrollTo({top:top+height*HOME_REVEAL_SCREENS,behavior});
  },[]);
@@ -97,27 +101,15 @@ function HomeExperience({format,selectedId,onSceneMotion}){
  useEffect(()=>{if(staticMode){sceneReady.current=true;setReady(true);setSceneReady(true);onSceneMotion(false);reveal.current=1;metrics.current.outro=0;updateLayers(1);}},[staticMode,selectedId]);
  const onReady=()=>{sceneReady.current=true;setReady(true);setSceneReady(true);};
  const focusEdit=()=>{const m=metrics.current;if(scrollY<m.top+m.height*HOME_REVEAL_SCREENS*.999||scrollY>m.top+m.height*(HOME_REVEAL_SCREENS+HOME_HOLD_SCREENS))explore('instant');};
- const signature=<div className="home-brand-arrival">
-  <h1 className="sr-only">NURA by Bin Sadhik</h1>
-  <h2 className="home-intro-line">A fragrance of your own.</h2>
-  <p className="home-intro-copy">Perfumes and precious oils, chosen for their character, balance and depth.</p>
-  <div className="home-hero-actions"><a className="home-explore" href="#featured-perfumes" onClick={e=>{e.preventDefault();pendingFocus.current=e.detail===0;explore(staticMode?'instant':'smooth');}}>Explore the five <ArrowDown size={16} strokeWidth={1}/></a><Link className="home-house-link" to="/about">The house <ArrowUpRight size={12} strokeWidth={1}/></Link></div>
- </div>;
- const chapterCopy=[null,
-  ['The Essence','Golden perfume oil flows from the stone.'],
-  ['The Capture','The essence is captured, where nature meets craft.'],
-  ['The Infusion','The essence blends and matures, becoming a signature fragrance.'],
-  ['The Completion',`${featured[0]?.name||'A fragrance'}, revealed.`]
- ][chapter];
+ const exploreHero=e=>{if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;e.preventDefault();pendingFocus.current=e.detail===0;explore(staticMode?'instant':'smooth');};
  const invitation=<Link className="shelf-invitation" to="/shelf"><span><small>THE COMPLETE COLLECTION</small><strong>Open the fragrance shelf</strong><span>Explore all {products.length} fragrances</span></span><ArrowUpRight size={25} strokeWidth={1}/></Link>;
  const choose=p=>navigate(`/products/${p.id}?format=${format}&view=featured`);
  const selectedProduct=featured.find(p=>p.id===selectedId);
- return <section className={`home-experience ${staticMode?'home-static':''} ${ready?'home-ready':''} ${selectedId?'collection-detail-open':''}`} data-home-phase={phase} ref={track} aria-label="NURA — from stone to fragrance">
-  {staticMode?<><div className="home-static-brand">{signature}{featured[0]&&<div className="home-static-hero-art" aria-hidden="true"><Bottle product={featured[0]} eager/></div>}</div><section id="featured-perfumes" className="home-static-collection" aria-label="Five featured fragrances"><div className="home-static-grid">{featured.map(p=><button key={p.id} className="home-static-niche" onClick={()=>choose(p)} aria-label={`Explore ${p.name}`}><Bottle product={p} eager/><span>{p.name}</span></button>)}</div><div className="home-static-edit"><Eyebrow>THE HOUSE EDIT / FIVE FRAGRANCES</Eyebrow>{invitation}</div></section>{selectedProduct&&<div className="home-static-closeup" aria-hidden="true"><Bottle product={selectedProduct} large eager/></div>}</>:<>
+ return <section className={`home-experience home-campaign ${staticMode?'home-static':''} ${ready?'home-ready':''} ${selectedId?'collection-detail-open':''}`} style={{'--home-track-height':`${(1+HOME_REVEAL_SCREENS+HOME_HOLD_SCREENS)*100}svh`,'--home-featured-top':`${HOME_REVEAL_SCREENS*100}svh`}} data-home-phase={phase} ref={track} aria-label="NURA — the art of fragrance">
+  {staticMode?<><HeroStory ref={story} staticMode onExplore={exploreHero} LinkComponent={Link}/><section id="featured-perfumes" className="home-static-collection" aria-label="Five featured fragrances"><div className="home-static-grid">{featured.map(p=><button key={p.id} className="home-static-niche" onClick={()=>choose(p)} aria-label={`Explore ${p.name}`}><Bottle product={p} format={format} eager/><span>{p.name}</span></button>)}</div><div className="home-static-edit"><Eyebrow>THE HOUSE EDIT / FIVE FRAGRANCES</Eyebrow>{invitation}</div></section>{selectedProduct&&<div className="home-static-closeup" aria-hidden="true"><Bottle product={selectedProduct} format={selectedFormat} large eager/></div>}</>:<>
    <div className="home-stage" ref={stage}>
-    <SceneGallery layout="featured" items={featured} index={0} selectedId={selectedId} revealProgressRef={reveal} onRevealProgress={updateLayers} interactionEnabled={phase==='collection'} onReady={onReady} onFallback={()=>setFallback(true)} onProductFocus={focusEdit} onMotion={onSceneMotion} onIndexChange={()=>{}} onSelect={choose}/>
-    <div className="home-brand" inert={phase!=='stone'||undefined} aria-hidden={phase!=='stone'||undefined}>{signature}</div>
-    {chapterCopy&&<div className="home-chapter" aria-hidden={!!selectedId||undefined}><h2><span>{chapter+1}.</span> {chapterCopy[0]}</h2><p>{chapterCopy[1]}</p><span className="home-chapter-rule"/></div>}
+    <SceneGallery selectedFormat={selectedFormat} layout="featured" items={featured} index={0} selectedId={selectedId} revealProgressRef={reveal} openingEnabled={openingEnabled} onRevealProgress={updateLayers} interactionEnabled={phase==='collection'} onReady={onReady} onFallback={()=>setFallback(true)} onProductFocus={focusEdit} onMotion={onSceneMotion} onIndexChange={()=>{}} onSelect={choose}/>
+    <HeroStory ref={story} openingEnabled={openingEnabled} interactive={phase==='stone'&&!selectedId} onExplore={exploreHero} LinkComponent={Link}/>
     <div className="home-edit" inert={phase!=='collection'||undefined} aria-hidden={phase!=='collection'||undefined}><Eyebrow>THE HOUSE EDIT / FIVE FRAGRANCES</Eyebrow>{invitation}</div>
    </div>
    <div id="featured-perfumes" className="home-featured-anchor" aria-hidden="true"/>
@@ -125,7 +117,7 @@ function HomeExperience({format,selectedId,onSceneMotion}){
  </section>;
 }
 
-function ShelfCollection({format,filters,setFilters,selectedId,onSceneMotion,onFilter}){
+function ShelfCollection({format,selectedFormat,filters,setFilters,selectedId,onSceneMotion,onFilter}){
  const {products,setSceneReady}=useStore(),navigate=useContext(Navigation),marker=useRef();
  const [width,setWidth]=useState(document.documentElement.clientWidth),[top,setTop]=useState(270);
  const filtered=useMemo(()=>filterProducts(products,{...filters,format}),[products,filters,format]);
@@ -134,7 +126,7 @@ function ShelfCollection({format,filters,setFilters,selectedId,onSceneMotion,onF
  return <section className={`shelf-collection ${selectedId?'collection-detail-open':''}`} aria-label="The fragrance shelf">
   <div className="shelf-heading"><div><Eyebrow>NURA / THE COMPLETE COLLECTION</Eyebrow><h1>The fragrance <i>shelf.</i></h1><p>Find your own expression. Come closer to a fragrance.</p></div><div className="shelf-heading-controls"><span>{String(filtered.length).padStart(2,'0')} FRAGRANCES</span><button onClick={onFilter}><SlidersHorizontal size={14}/> Refine the shelf</button></div></div>
   <div className="shelf-grid-space" ref={marker} style={{height:shelfHeight(items.length,width)}}>
-   <SceneGallery layout="shelf" shelfTop={top} items={items} index={0} selectedId={selectedId} onReady={()=>setSceneReady(true)} onMotion={onSceneMotion} onIndexChange={()=>{}} onSelect={p=>navigate(`/products/${p.id}?format=${format}&view=shelf`)}/>
+   <SceneGallery selectedFormat={selectedFormat} layout="shelf" shelfTop={top} items={items} index={0} selectedId={selectedId} onReady={()=>setSceneReady(true)} onMotion={onSceneMotion} onIndexChange={()=>{}} onSelect={p=>navigate(`/products/${p.id}?format=${format}&view=shelf`)}/>
    {!filtered.length&&<div className="shelf-empty"><h2>No fragrances found.</h2><button className="text-link" onClick={()=>setFilters({query:'',family:'All',gender:'All',sort:'collection'})}>Reset filters <RotateCcw size={15}/></button></div>}
   </div>
  </section>;
@@ -160,7 +152,7 @@ function Finder(){const {products}=useStore();const [step,setStep]=useState(0),[
 function Storefront(){
  const {products,loaded}=useStore();
  const [route,setRoute]=useState(initialLocation),[panel,setPanel]=useState(null),[cart,setCart]=useState(()=>{try{return restoreCart(JSON.parse(localStorage.getItem('nura-bag-v1')),products);}catch{return [];}});
- const [headerExpanded,setHeaderExpanded]=useState(false),[format,setFormat]=useState(()=>location.pathname==='/perfume-oil'?'oil':'perfume'),[filters,setFilters]=useState({query:'',family:'All',gender:'All',sort:'collection'}),[toast,setToast]=useState(''),[sceneBusy,setSceneBusy]=useState(false);
+ const [headerExpanded,setHeaderExpanded]=useState(false),[format,setFormat]=useState(initialBrowseFormat),[filters,setFilters]=useState({query:'',family:'All',gender:'All',sort:'collection'}),[toast,setToast]=useState(''),[sceneBusy,setSceneBusy]=useState(false);
  const heroRef=useRef(null),toastTimer=useRef(),collectionReturn=useRef(location.search.includes('view=featured')?'/':'/shelf'),scrollReturn=useRef(location.search.includes('view=featured')?innerHeight*HOME_REVEAL_SCREENS:0),pendingRestore=useRef(null),routeRef=useRef(route);routeRef.current=route;
  const path=route.split('?')[0].replace(/\/+$/,'')||'/',params=new URLSearchParams(route.split('?')[1]||''),product=path.startsWith('/products/')?products.find(p=>p.id===path.split('/')[2]):null;
  const isHome=path==='/'||!!product&&params.get('view')==='featured'&&FEATURED_IDS.includes(product.id);
@@ -173,13 +165,14 @@ function Storefront(){
   if(next.startsWith('/products/')&&!previous.startsWith('/products/')){collectionReturn.current=isHome?'/':isShelf?previous:'/shelf';scrollReturn.current=isHome||isShelf?scrollY:0;}
   history.replaceState({...history.state,nuraScroll:scrollY},'',location.href);
   history.pushState({nuraScroll:preserveScroll||next.startsWith('/products/')?scrollY:0},'',url);setRoute(url);setPanel(null);
-  if(next==='/perfume-oil')setFormat('oil');if(next==='/perfume')setFormat('perfume');
+  setFormat(browseFormat(next,url.split('?')[1]||'',format));
   if(!preserveScroll&&!next.startsWith('/products/'))window.scrollTo({top:0,behavior:'instant'});
  };
- const closeProduct=()=>{navigate(collectionReturn.current,{preserveScroll:true});requestAnimationFrame(()=>window.scrollTo({top:scrollReturn.current,behavior:'instant'}));};
- useEffect(()=>{const previous=history.scrollRestoration;history.scrollRestoration='manual';const onPop=()=>{pendingRestore.current=history.state?.nuraScroll??0;setRoute(initialLocation());setPanel(null);if(location.pathname==='/perfume-oil')setFormat('oil');if(location.pathname==='/perfume')setFormat('perfume');};window.addEventListener('popstate',onPop);return()=>{history.scrollRestoration=previous;window.removeEventListener('popstate',onPop);};},[]);
+ const closeProduct=()=>{navigate(`${collectionReturn.current.split('?')[0]}?format=${productFormat}`,{preserveScroll:true});requestAnimationFrame(()=>window.scrollTo({top:scrollReturn.current,behavior:'instant'}));};
+ useEffect(()=>{const previous=history.scrollRestoration;history.scrollRestoration='manual';const onPop=()=>{pendingRestore.current=history.state?.nuraScroll??0;setRoute(initialLocation());setPanel(null);setFormat(browseFormat(location.pathname,location.search,initialBrowseFormat()));};window.addEventListener('popstate',onPop);return()=>{history.scrollRestoration=previous;window.removeEventListener('popstate',onPop);};},[]);
  useLayoutEffect(()=>{if(!loaded||pendingRestore.current===null)return;window.scrollTo({top:pendingRestore.current,behavior:'instant'});pendingRestore.current=null;window.dispatchEvent(new Event('scroll'));},[route,loaded]);
  useEffect(()=>{setCart(c=>restoreCart(c,products));},[products]);
+ useEffect(()=>{try{sessionStorage.setItem('nura-browse-format',format);}catch{}},[format]);
  useEffect(()=>{try{localStorage.setItem('nura-bag-v1',JSON.stringify(cart));}catch{}},[cart]);
  useEffect(()=>{document.title=path==='/admin'?'Catalog studio — NURA':product?`${product.name} — NURA by Bin Sadhik`:isShelf?'The fragrance shelf — NURA':pages[path]?`${pages[path].title.replace('\n',' ')} — NURA`:path==='/create'?'Fragrance Finder — NURA':path==='/contact'?'Contact — NURA':'NURA — A house of curation';},[path,product,isShelf]);
  useEffect(()=>{if(!isHome){setHeaderExpanded(true);return;}setHeaderExpanded(false);const observer=new IntersectionObserver(([entry])=>setHeaderExpanded(!entry.isIntersecting),{threshold:0,rootMargin:'-80px 0px 0px 0px'});if(heroRef.current)observer.observe(heroRef.current);return()=>observer.disconnect();},[isHome,loaded]);
@@ -192,10 +185,10 @@ function Storefront(){
   <div id="site-shell" className={`${isHome||isShelf?'scene-page':'content-page'} ${isHome?'home-page':isShelf?'shelf-page':''}`}>
    <a href="#main-content" className="skip-link">Skip to content</a>
    <Header expanded={headerExpanded} bagCount={cart.reduce((n,item)=>n+item.quantity,0)} onMenu={()=>setPanel('menu')} onBag={()=>setPanel('bag')} onFilter={isShelf?()=>setPanel('filters'):null} count={filterProducts(products,{...filters,format}).length}/>
-   {isHome?<main id="main-content" ref={heroRef}><HomeExperience format={format} selectedId={product?.id||null} onSceneMotion={setSceneBusy}/></main>:isShelf?<main id="main-content"><ShelfCollection format={format} filters={filters} setFilters={setFilters} selectedId={product?.id||null} onSceneMotion={setSceneBusy} onFilter={()=>setPanel('filters')}/></main>:<div id="main-content">{pages[path]?<EditorialPage page={pages[path]}/>:path==='/contact'?<Contact/>:path==='/create'?<Finder/>:<main className="not-found section-wrap"><Eyebrow>PAGE NOT FOUND</Eyebrow><h1>A different<br/><i>direction.</i></h1><p>We couldn’t find that page.</p><TextLink to="/shelf">Return to the shelf</TextLink></main>}</div>}
+   {isHome?<main id="main-content" ref={heroRef}><HomeExperience selectedFormat={productFormat} format={format} selectedId={product?.id||null} onSceneMotion={setSceneBusy} restorePosition={pendingRestore.current??0}/></main>:isShelf?<main id="main-content"><ShelfCollection selectedFormat={productFormat} format={format} filters={filters} setFilters={setFilters} selectedId={product?.id||null} onSceneMotion={setSceneBusy} onFilter={()=>setPanel('filters')}/></main>:<div id="main-content">{pages[path]?<EditorialPage page={pages[path]}/>:path==='/contact'?<Contact/>:path==='/create'?<Finder/>:<main className="not-found section-wrap"><Eyebrow>PAGE NOT FOUND</Eyebrow><h1>A different<br/><i>direction.</i></h1><p>We couldn’t find that page.</p><TextLink to="/shelf">Return to the shelf</TextLink></main>}</div>}
    <Footer/>
   </div>
-  {product&&!panel&&<ProductDetail ready={!sceneBusy} navigationProducts={navigationProducts} returnLabel={isHome?'Back to the house edit':'Back to the fragrance shelf'} onBag={()=>setPanel('bag')} bagCount={cart.reduce((n,i)=>n+i.quantity,0)} onVariant={(f,s)=>{const url=`/products/${product.id}?format=${f}&size=${s}&view=${isHome?'featured':'shelf'}`;history.replaceState({...history.state},'',url);setRoute(url);}} product={product} format={productFormat} size={productSize} onClose={closeProduct} onAdd={add} onNavigate={(p,f)=>navigate(`/products/${p.id}?format=${f}&view=${isHome?'featured':'shelf'}`)}/>}
+  {product&&!panel&&<ProductDetail ready={!sceneBusy} navigationProducts={navigationProducts} returnLabel={isHome?'Back to the house edit':'Back to the fragrance shelf'} onBag={()=>setPanel('bag')} bagCount={cart.reduce((n,i)=>n+i.quantity,0)} onVariant={(f,s)=>{setFormat(f);const url=`/products/${product.id}?format=${f}&size=${s}&view=${isHome?'featured':'shelf'}`;history.replaceState({...history.state},'',url);setRoute(url);}} product={product} format={productFormat} size={productSize} onClose={closeProduct} onAdd={add} onNavigate={(p,f)=>navigate(`/products/${p.id}?format=${f}&view=${isHome?'featured':'shelf'}`)}/>}
   {panel==='menu'&&<MenuPanel onClose={()=>setPanel(null)}/>}
   {panel==='bag'&&<Bag cart={restoreCart(cart,products)} setCart={setCart} onClose={()=>setPanel(null)}/>}
   {panel==='filters'&&<FilterPanel filters={filters} setFilters={setFilters} format={format} onFormat={setFormat} onClose={()=>setPanel(null)}/>}
