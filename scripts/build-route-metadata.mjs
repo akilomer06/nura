@@ -6,7 +6,7 @@ try{catalog=JSON.parse(await fs.readFile('.nura-admin/catalog.json','utf8'));}ca
 const products=catalog.products.filter(p=>p.published!==false);
 await fs.writeFile('dist/catalog.json',JSON.stringify({...catalog,products}));
 const template=await fs.readFile('dist/index.html','utf8');
-const origin=(process.env.NURA_SITE_URL||'https://nura-i33k.vercel.app').replace(/\/$/,'');
+const origin=(process.env.NURA_SITE_URL||(process.env.VERCEL_PROJECT_PRODUCTION_URL?`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`:'https://nura-i33k.vercel.app')).replace(/\/$/,'');
 const escape=s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 const routes=[{path:'/',title:'NURA — A house of curation',description:'NURA by Bin Sadhik. Discover the NURA fragrances in perfume and concentrated perfume oil, chosen with intention.'},...['shelf','collections','perfume','perfume-oil'].map(path=>({path:'/'+path,title:`${path==='perfume-oil'?'Perfume oils':path==='perfume'?'Perfumes':'The collection'} — NURA`,description:'Explore the NURA fragrance collection. Perfume in 50 and 100 ml; concentrated perfume oil in 6 and 12 ml.'})),...Object.entries(pages).map(([path,p])=>({path,title:p.title.replace('\n',' ')+' — NURA',description:p.intro})),{path:'/contact',title:'Contact — NURA by Bin Sadhik',description:'Personal fragrance recommendations and order support. Contact NURA via WhatsApp at +91 90039 54228 or info@nura.in.'},{path:'/create',title:'Fragrance Finder — NURA',description:'Explore scent families and find a NURA fragrance guided by your preferences.'},...products.map(p=>({path:'/products/'+p.id,title:p.name+' — NURA by Bin Sadhik',description:p.description,product:p}))];
 for(const r of routes){
