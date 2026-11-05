@@ -26,6 +26,14 @@ test('each chapter is readable at its milestone; only its own CTA is enabled',()
  }
  assert.equal(HERO_CONFIG.phases[0].action,'featured');assert.equal(HERO_CONFIG.phases[3].action,'shelf');
 });
+
+test('the centered copy comes into view as the perfume moves left',()=>{
+ for(let i=0;i<=250;i++){
+  const {copy}=heroStoryState(i/1000);
+  assert.ok(copy[0].opacity>0||copy[1].opacity>0);
+ }
+ assert.ok(heroStoryState(.2).copy[1].opacity>.8);
+});
 test('product poses fit desktop, tablet and narrow phones without distorting their aspect ratios',()=>{
  for(const [width,height] of [[1920,1080],[1440,900],[1168,861],[1024,768],[768,1024],[390,844],[320,740]]){
   for(let i=0;i<=400;i++){

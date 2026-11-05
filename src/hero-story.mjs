@@ -3,10 +3,10 @@ export const HERO_CONFIG={
  scrollScreens:3,
  revealScreens:1,
  holdScreens:.4,
- entrance:{holdSeconds:.6,openSeconds:1.5,scrollEnd:.04,slogan:'A fragrance of your own.'},
+ entrance:{holdSeconds:1.15,openSeconds:1.5,scrollEnd:.04,slogan:'A fragrance of your own.'},
  branding:{src:'/assets/brand/nura-logo-bottle.svg?v=1',aspect:640/340,perfume:{left:.18,top:.51,width:.64},oil:{left:.16,top:.55,width:.68}},
  camera:{height:8.5,distance:4.1,targetDepth:.14,settleAt:.9,brandFadeEnd:.3,labelsStart:.85},
- copyWindows:[[0,0,.025,.12],[.21,.25,.42,.46],[.46,.50,.67,.71],[.71,.75,1,1]],
+ copyWindows:[[0,0,.085,.17],[.145,.215,.42,.46],[.46,.50,.67,.71],[.71,.75,1,1]],
  rotation:[[0,0],[.10,-.12],[.25,-.47],[.5,0],[.75,.38],[1,.16]],
  desktop:{
   perfume:[[0,.65,.85,.66],[.10,.65,.85,.67],[.25,.19,.85,.69],[.5,.18,.85,.70],[.75,.18,.85,.74],[1,.19,.85,.69]],
