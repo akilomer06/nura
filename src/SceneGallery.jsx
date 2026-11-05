@@ -3,23 +3,23 @@ import * as THREE from 'three';
 import {bottleArtwork} from './bottle-artwork.mjs';
 import {bottleTransitionPose,FORMAT_TRANSITION_MS} from './bottle-transition.mjs';
 import {bottleBlendGLSL,bottleBlendMaterial,setBottleBlend} from './bottle-blend.mjs';
-import {createHeroPerfume} from './hero-product.mjs';
-import {HERO_CONFIG,heroStoryState,heroEntranceProgress,heroEntranceLayers} from './hero-story.mjs';
+import {createHeroBottle,createRockStream,createBottleEnvironment} from './hero-bottle.mjs';
+import {createStoneFormation} from './stone-formation.mjs';
+import {HERO_CONFIG} from './hero-story.mjs';
 import {Reflector} from 'three/addons/objects/Reflector.js';
 import {HorizontalBlurShader} from 'three/addons/shaders/HorizontalBlurShader.js';
 import {VerticalBlurShader} from 'three/addons/shaders/VerticalBlurShader.js';
 import {NICHE,galleryPose,detailPose,cameraEase,clampIndex,visibleCount} from './scene-layout.mjs';
-import {displayLayout,displayCell,displayPose,displayDetailPose,ROW_PITCH,homeRevealPose,homeRevealLayers,HOME_STORY_FRACTION,clampReveal} from './collection-layout.mjs';
+import {displayLayout,displayCell,displayPose,displayDetailPose,ROW_PITCH,homeStoryState,clampReveal} from './collection-layout.mjs';
 
-export default function SceneGallery({items,index,selectedId,selectedFormat='oil',onSelect,onIndexChange,onMotion,onReady,layout='wall',shelfTop=270,onProductFocus,revealProgressRef,onRevealProgress,openingEnabled=false,interactionEnabled=true,onFallback}){
+export default function SceneGallery({items,index,selectedId,selectedFormat='oil',onSelect,onIndexChange,onMotion,onReady,layout='wall',shelfTop=270,onProductFocus,revealProgressRef,onRevealProgress,interactionEnabled=true,onFallback}){
  const [layoutWidth,setLayoutWidth]=useState(()=>document.body.clientWidth||innerWidth);
  useEffect(()=>{const update=()=>setLayoutWidth(host.current?.clientWidth||document.body.clientWidth);window.addEventListener('resize',update);return()=>window.removeEventListener('resize',update);},[]);
  const spec=displayLayout(layout,items.length,layoutWidth),structured=layout!=='wall',stacked=spec.scale!==1;
  const host=useRef(),canvasMount=useRef(),zoneRefs=useRef(new Map()),engine=useRef(),props=useRef();
- const entrance=useRef({progress:openingEnabled?0:1,start:null});
  const [hovered,setHovered]=useState(null),[fallback,setFallback]=useState(false),[loaded,setLoaded]=useState(false),[failedImages,setFailedImages]=useState(new Set()),[fallbackScroll,setFallbackScroll]=useState(scrollY);
  useEffect(()=>{if(!fallback||layout!=='shelf')return;const update=()=>setFallbackScroll(scrollY);window.addEventListener('scroll',update,{passive:true});update();return()=>window.removeEventListener('scroll',update);},[fallback,layout]);
- props.current={items,index,selectedId,selectedFormat,onSelect,onIndexChange,onMotion,onReady,hovered,layout,shelfTop,onProductFocus,revealProgressRef,onRevealProgress,openingEnabled,interactionEnabled,onFallback};
+ props.current={items,index,selectedId,selectedFormat,onSelect,onIndexChange,onMotion,onReady,hovered,layout,shelfTop,onProductFocus,revealProgressRef,onRevealProgress,interactionEnabled,onFallback};
  const ids=layout+':'+spec.columns+':'+items.map(p=>`${p.id}:${p.artwork}`).join('|');
  useEffect(()=>{
   const mount=canvasMount.current,element=host.current;
@@ -41,18 +41,10 @@ export default function SceneGallery({items,index,selectedId,selectedFormat='oil
   let assetsReady=false,readyNotified=false;
   const manager=new THREE.LoadingManager(()=>{assetsReady=true;}),loader=new THREE.TextureLoader(manager),resources=[],bottles=[],lamps=[],zones=[];
   delete element.dataset.heroActorReady;
-  let heroProduct=null;
-  if(revealProgressRef){
-   let heroPhoto=null,heroBrand=null;
-   const assembleHero=()=>{if(!heroPhoto||!heroBrand||stopped)return;try{heroProduct=createHeroPerfume(heroPhoto,renderer,resources,heroBrand);scene.add(heroProduct.anchor);}catch{element.dataset.heroActor='unavailable';}};
-   loader.load(HERO_CONFIG.branding.src,texture=>{if(stopped){texture.dispose();return;}texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=renderer.capabilities.getMaxAnisotropy();resources.push(texture);heroBrand=texture;assembleHero();});
-   const loadHero=(url,backup=false)=>loader.load(url,texture=>{
-    if(stopped){texture.dispose();return;}
-    texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=renderer.capabilities.getMaxAnisotropy();resources.push(texture);
-    heroPhoto=texture;assembleHero();
-   },undefined,()=>{if(!backup&&!stopped)loadHero('/assets/hero/perfume-original.png',true);});
-   loadHero('/assets/hero/perfume-original.webp');
-  }
+  let hero,formation,heroStream,plateReady=false;
+  const heroIndex=revealProgressRef?items.findIndex(product=>product.id===HERO_CONFIG.product):-1;
+  const plate=heroIndex>=0?loader.load(HERO_CONFIG.backdrop,()=>{plateReady=true;},undefined,()=>{if(!stopped)props.current.onFallback?.();}):null;
+  if(plate){plate.colorSpace=THREE.SRGBColorSpace;plate.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());resources.push(plate);}
   delete element.dataset.stoneReady;
   const stone=loader.load('/assets/stone.webp',()=>{if(!stopped)element.dataset.stoneReady='true';});stone.colorSpace=THREE.SRGBColorSpace;stone.wrapS=stone.wrapT=THREE.RepeatWrapping;stone.repeat.set(.65,.75);if(revealProgressRef)stone.offset.set(.45,.1);stone.anisotropy=Math.min(16,renderer.capabilities.getMaxAnisotropy());resources.push(stone);
   const stoneDetail=revealProgressRef?loader.load('/assets/stone-detail-v1.webp'):null;
@@ -136,7 +128,7 @@ export default function SceneGallery({items,index,selectedId,selectedFormat='oil
     // without the jagged/shimmering edges of sampling the full-size image directly.
     texture.generateMipmaps=true;texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;
     record.textures[format]=texture;resources.push(texture);
-   },undefined,()=>{if(format==='oil')setFailedImages(previous=>new Set([...previous,product.id]));});
+   },undefined,()=>{if(stopped||format!=='oil')return;setFailedImages(previous=>new Set([...previous,product.id]));if(i===heroIndex)props.current.onFallback?.();});
    zones.push({id:product.id,index:i,labelPoint:new THREE.Vector3(x,cell.y+(.75+NICHE.bottleHeight/2)*cell.scale,NICHE.bottleZ),corners:[new THREE.Vector3(x-NICHE.width/2,cell.y+NICHE.top*cell.scale,.12),new THREE.Vector3(x+NICHE.width/2,cell.y+NICHE.bottom*cell.scale,.12)]});
    if(cell.scale!==1||cell.y!==0){const meshes=room.children.slice(firstMesh),group=new THREE.Group();group.position.y=cell.y;group.scale.y=cell.scale;meshes.forEach(mesh=>group.add(mesh));room.add(group);}
 
@@ -154,12 +146,11 @@ export default function SceneGallery({items,index,selectedId,selectedFormat='oil
   floor.onBeforeRender=function(...args){reflect.apply(this,args);const target=renderer.getRenderTarget(),xr=renderer.xr.enabled;renderer.getViewport(viewport);renderer.xr.enabled=false;horizontal.uniforms.tDiffuse.value=floor.getRenderTarget().texture;blurQuad.material=horizontal;renderer.setRenderTarget(blurA);renderer.render(blurScene,blurCamera);vertical.uniforms.tDiffuse.value=blurA.texture;blurQuad.material=vertical;renderer.setRenderTarget(blurB);renderer.render(blurScene,blurCamera);floor.material.uniforms.tDiffuse.value=blurB.texture;renderer.setRenderTarget(target);renderer.setViewport(viewport);renderer.xr.enabled=xr;};
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
   let homeProgress=clampReveal(props.current.revealProgressRef?.current??0);
-  let openingProgress=entrance.current.progress;
   let heroStillFrame=false,inView=true;
   const frameSamples=new Float64Array(240);let sampleCount=0,sampleCursor=0;
   const visibilityObserver=revealProgressRef?new IntersectionObserver(entries=>{inView=entries[0].isIntersecting;}):null;
   if(visibilityObserver)visibilityObserver.observe(element.closest('.home-experience'));
-  const widePose=(config,w,h)=>config.revealProgressRef?homeRevealPose(homeProgress,items.length,w,h):structured?displayPose(layout,items.length,w,h,{scroll:scrollY,top:config.shelfTop}):galleryPose(config.index,items.length,w,h);
+  const widePose=(config,w,h,story)=>config.revealProgressRef?(story??homeStoryState(homeProgress,items.length,w,h)).camera:structured?displayPose(layout,items.length,w,h,{scroll:scrollY,top:config.shelfTop}):galleryPose(config.index,items.length,w,h);
   let width=innerWidth,height=innerHeight,currentPose=widePose(props.current,width,height),motion=null,lastKey='',animationFrame,stopped=false,drag=null,swallowClick=false,lastTime=performance.now(),renderedOnce=false;
   camera.position.fromArray(currentPose.position);let look=new THREE.Vector3(...currentPose.target);camera.lookAt(look);
   const resize=()=>{width=element.clientWidth;height=element.clientHeight;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();heroStillFrame=false;sampleCount=0;sampleCursor=0;};
@@ -179,37 +170,32 @@ export default function SceneGallery({items,index,selectedId,selectedFormat='oil
    const config=props.current,selected=items.findIndex(p=>p.id===config.selectedId),key=`${config.index}:${config.selectedId}:${width}:${height}`;
    if(document.hidden||(!inView&&selected<0))return;
    const previousProgress=homeProgress;
-   const previousOpening=openingProgress;
    if(config.revealProgressRef&&selected<0){const target=clampReveal(config.revealProgressRef.current);homeProgress=THREE.MathUtils.damp(homeProgress,target,12,dt);if(Math.abs(homeProgress-target)<.0001)homeProgress=target;}
-   if(config.revealProgressRef){
-    if(entrance.current.start===null&&element.dataset.stoneReady==='true')entrance.current.start=now;
-    openingProgress=heroEntranceProgress(entrance.current.start===null?0:(now-entrance.current.start)/1000,homeProgress,openingProgress,config.openingEnabled&&selected<0);
-    entrance.current.progress=openingProgress;
-    element.dataset.openingProgress=openingProgress.toFixed(4);
+   const story=config.revealProgressRef?homeStoryState(selected>=0?1:homeProgress,items.length,width,height):null;
+   if(!hero&&story&&plateReady&&bottles[heroIndex]?.textures.oil){
+    try{
+     const environment=createBottleEnvironment(renderer,resources);
+     hero=createHeroBottle({texture:bottles[heroIndex].textures.oil,environment,resources});
+     formation=createStoneFormation({plate,resources});formation.update(story);
+     heroStream=createRockStream({source:story.source,bottlePosition:story.openingBottlePosition,resources,environment,surfaceAt:formation.surfaceAt});
+     scene.add(formation.root,hero.root,heroStream.root);
+    }catch{props.current.onFallback?.();return;}
    }
    if(config.revealProgressRef&&Math.abs(homeProgress-previousProgress)>.00001){
     frameSamples[sampleCursor++%240]=elapsed;sampleCount=Math.min(240,sampleCount+1);
     if(sampleCount>=30&&sampleCursor%30===0){const samples=Array.from(frameSamples.subarray(0,sampleCount)).sort((a,b)=>a-b);element.dataset.frameMean=(samples.reduce((a,b)=>a+b,0)/sampleCount).toFixed(1);element.dataset.frameP95=samples[Math.floor((sampleCount-1)*.95)].toFixed(1);element.dataset.frameSamples=String(sampleCount);}
    }
 
-   if(key!==lastKey&&!drag){const old=lastKey.split(':'),wasDetail=lastKey.includes(':')&&old[1]!=='null'&&old[1]!=='undefined',pose=selected>=0?(structured?displayDetailPose(selected,layout,items.length,width):detailPose(selected,width)):widePose(config,width,height);if(!lastKey){camera.position.fromArray(pose.position);look.fromArray(pose.target);motion=null;props.current.onMotion?.(false);}else if(old[0]===String(config.index)&&old[1]===String(config.selectedId)){if(motion){motion.to.fromArray(pose.position);motion.toLook.fromArray(pose.target);}else {camera.position.fromArray(pose.position);look.fromArray(pose.target);}}else startMotion(pose,selected>=0?1500:wasDetail?1350:850,selected>=0||wasDetail);lastKey=key;}
-   if(motion){if((layout==='shelf'||config.revealProgressRef)&&selected<0){const pose=widePose(config,width,height);motion.to.fromArray(pose.position);motion.toLook.fromArray(pose.target);}const t=Math.min((now-motion.start)/motion.duration,1),e=cameraEase(t);camera.position.lerpVectors(motion.from,motion.to,e);look.lerpVectors(motion.fromLook,motion.toLook,e);if(t>=1){const notify=motion.notify;motion=null;if(notify)props.current.onMotion?.(false);}}
-   if((layout==='shelf'||config.revealProgressRef)&&selected<0&&!motion){const pose=widePose(config,width,height);camera.position.fromArray(pose.position);look.fromArray(pose.target);}
+   if(key!==lastKey&&!drag){const old=lastKey.split(':'),wasDetail=lastKey.includes(':')&&old[1]!=='null'&&old[1]!=='undefined',pose=selected>=0?(structured?displayDetailPose(selected,layout,items.length,width):detailPose(selected,width)):widePose(config,width,height,story);if(!lastKey){camera.position.fromArray(pose.position);look.fromArray(pose.target);motion=null;props.current.onMotion?.(false);}else if(old[0]===String(config.index)&&old[1]===String(config.selectedId)){if(motion){motion.to.fromArray(pose.position);motion.toLook.fromArray(pose.target);}else {camera.position.fromArray(pose.position);look.fromArray(pose.target);}}else startMotion(pose,selected>=0?1500:wasDetail?1350:850,selected>=0||wasDetail);lastKey=key;}
+   if(motion){if((layout==='shelf'||story)&&selected<0){const pose=widePose(config,width,height,story);motion.to.fromArray(pose.position);motion.toLook.fromArray(pose.target);}const t=Math.min((now-motion.start)/motion.duration,1),e=cameraEase(t);camera.position.lerpVectors(motion.from,motion.to,e);look.lerpVectors(motion.fromLook,motion.toLook,e);if(t>=1){const notify=motion.notify;motion=null;if(notify)props.current.onMotion?.(false);}}
+   if((layout==='shelf'||story)&&selected<0&&!motion){const pose=widePose(config,width,height,story);camera.position.fromArray(pose.position);look.fromArray(pose.target);}
    camera.lookAt(look);camera.updateMatrixWorld();
-   const heroLayers=config.revealProgressRef?homeRevealLayers(homeProgress):null;
-   if(heroProduct){
-    const state=heroStoryState(heroLayers.storyProgress,width,height);
-    heroProduct.update(state.perfume,camera,width,height,selected<0?heroLayers.brandOpacity*heroEntranceLayers(openingProgress).sceneOpacity:0);
-    element.dataset.heroYaw=state.perfume.yaw.toFixed(4);
-   }
-   const quality=config.revealProgressRef&&selected<0&&homeProgress<=HOME_STORY_FRACTION?1.5:innerWidth>700?2:Math.min(devicePixelRatio,1.5);
+   const inStory=story&&selected<0&&homeProgress<.998;
+   const quality=inStory?Math.min(devicePixelRatio,width>760?1.35:1.2):innerWidth>700?2:Math.min(devicePixelRatio,1.5);
    if(renderer.getPixelRatio()!==quality){renderer.setPixelRatio(quality);renderer.setSize(width,height,false);heroStillFrame=false;}
    // Retain a completed stone/product frame while the entrance and scroll rest.
-   if(config.revealProgressRef&&homeProgress<=HOME_STORY_FRACTION&&selected<0&&!motion){
-    element.dataset.revealProgress=homeProgress.toFixed(4);config.onRevealProgress?.(homeProgress,false,openingProgress);
-    if(heroStillFrame&&renderedOnce&&assetsReady&&readyNotified&&Math.abs(openingProgress-previousOpening)<.00001&&(!heroProduct||Math.abs(homeProgress-previousProgress)<.00001)){element.dataset.renderMode='retained-frame';return;}
-    heroStillFrame=true;
-   }else heroStillFrame=false;
+   if(inStory&&!motion&&heroStillFrame&&readyNotified&&homeProgress===previousProgress){element.dataset.renderMode='retained-frame';return;}
+   heroStillFrame=!!inStory&&!motion;
    element.dataset.renderMode='live-scene';
    bottles.forEach(bottle=>{
     const isSelected=config.selectedId===bottle.id,format=config.selectedFormat;
@@ -238,11 +224,25 @@ export default function SceneGallery({items,index,selectedId,selectedFormat='oil
    element.dataset.formatMotion=bottles.some(bottle=>bottle.transition)?'switching':'settled';
    lamps.forEach((lamp,i)=>{const lit=lamp.id===(config.selectedId||(config.interactionEnabled?config.hovered:null));lamp.energy=THREE.MathUtils.damp(lamp.energy,lit?1:0,lit?9:7,dt);if(lit)activeLamp=lamp;lamp.bulbMaterial.color.setRGB(.07+lamp.energy*.10,.15+lamp.energy*.65,.10+lamp.energy*.25);lamp.glowMat.opacity=.03+lamp.energy*.65;lamp.beamMat.uniforms.strength.value=.005+lamp.energy*.09;const target=config.selectedId&&lamp.id!==config.selectedId?.012:lit?1:.56;const value=THREE.MathUtils.damp(bottles[i].brightness,target,lit?9:7,dt);bottles[i].brightness=value;bottles[i].material.color.setRGB(value,value,value);if(bottles[i].reflectionMaterial)bottles[i].reflectionMaterial.mat.uniforms.brightness.value=value*bottles[i].formatOpacity;const zone=zoneRefs.current.get(lamp.id);if(zone)zone.dataset.illumination=value.toFixed(3);});
    if(activeLamp){activeSpot.position.set(activeLamp.x,activeLamp.y+5.36*activeLamp.scale,-.45);activeSpot.target.position.set(activeLamp.x,activeLamp.y+.73*activeLamp.scale,-.62);activeBacklight.position.set(activeLamp.x,activeLamp.y+3.6*activeLamp.scale,-.28);activeSpot.intensity=activeLamp.energy*46;activeBacklight.intensity=activeLamp.energy*5;}
-   if(config.revealProgressRef){const wallProgress=homeRevealLayers(homeProgress).wallProgress;heroGraze.intensity=2.4*(1-THREE.MathUtils.smoothstep(wallProgress,.1,.85));floor.visible=!stacked&&(wallProgress>.35||selected>=0);element.dataset.revealProgress=homeProgress.toFixed(4);config.onRevealProgress?.(homeProgress,!!motion,openingProgress);}
+   if(story){
+    room.visible=story.storyOpacity<.999;
+    if(hero){
+     const first=bottles[heroIndex],showActor=story.shelfArtwork<1;
+     hero.root.visible=showActor;first.mesh.visible=story.shelfArtwork>0;first.material.opacity*=story.shelfArtwork;
+     if(first.reflectionMaterial)first.reflectionMaterial.mat.uniforms.brightness.value*=story.shelfArtwork;
+     if(showActor){hero.update(story);hero.setBrightness(1-(1-story.storyLight)*(1-first.brightness));}
+     formation.update(story);heroStream.root.visible=formation.root.visible;
+     if(heroStream.root.visible)heroStream.update(story,homeProgress);
+     element.dataset.heroFill=story.fill.toFixed(3);element.dataset.heroStream=story.stream.toFixed(3);
+    }
+    heroGraze.intensity=2.4*story.storyLight;
+    floor.visible=!stacked&&(homeProgress>.91||selected>=0);
+    element.dataset.revealProgress=homeProgress.toFixed(4);config.onRevealProgress?.(homeProgress,!!motion);
+   }
    element.dataset.motion=motion?'moving':'settled';element.dataset.view=selected>=0?'detail':'gallery';
    floor.material.uniforms.uTime.value=reduced.matches?0:now*.001;
    zones.forEach(zone=>{const el=zoneRefs.current.get(zone.id);if(!el)return;const a=zone.corners[0].clone().project(camera),b=zone.corners[1].clone().project(camera),left=(a.x*.5+.5)*width,top=(-a.y*.5+.5)*height,right=(b.x*.5+.5)*width,bottom=(-b.y*.5+.5)*height;const visible=right>0&&left<width&&selected<0;el.style.display=visible?'block':'none';if(visible){const label=zone.labelPoint.clone().project(camera);el.style.setProperty('--label-center',`${(label.x*.5+.5)*width-left}px`);el.style.setProperty('--label-width',`${Math.max(70,(right-left)*1.06)}px`);el.style.transform=`translate3d(${left}px,${top}px,0)`;el.style.width=`${right-left}px`;el.style.height=`${bottom-top}px`;}});
-   renderer.render(scene,camera);if(heroProduct)element.dataset.heroActorReady='true';if(!renderedOnce){renderedOnce=true;setLoaded(true);}if(renderedOnce&&assetsReady&&!readyNotified){readyNotified=true;props.current.onReady?.();}
+   renderer.render(scene,camera);if(hero)element.dataset.heroActorReady='true';if(!renderedOnce){renderedOnce=true;setLoaded(true);}if(renderedOnce&&assetsReady&&(!story||hero)&&!readyNotified){readyNotified=true;props.current.onReady?.();}
   };
   animationFrame=requestAnimationFrame(animate);engine.current={renderer,scene,camera};
   return()=>{stopped=true;cancelAnimationFrame(animationFrame);observer.disconnect();visibilityObserver?.disconnect();renderer.domElement.removeEventListener('webglcontextlost',contextLost);element.removeEventListener('pointerdown',pointerDown);element.removeEventListener('pointermove',pointerMove);window.removeEventListener('pointerup',pointerUp);window.removeEventListener('pointercancel',pointerCancel);element.removeEventListener('click',clickCapture,true);if(!structured)element.removeEventListener('wheel',wheel);floor.dispose();resources.forEach(r=>r.dispose?.());renderer.dispose();renderer.domElement.remove();};

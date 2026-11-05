@@ -1,5 +1,6 @@
 import {NICHE,galleryPose,detailPose} from './scene-layout.mjs';
-import {HERO_CONFIG} from './hero-story.mjs';
+import {HERO_CONFIG,clampReveal,smoothRange} from './hero-story.mjs';
+export {clampReveal,homeRevealLayers} from './hero-story.mjs';
 
 export const FEATURED_IDS=['althair-pdm','erba-pura','delighted-dior','almarj','sheikh-musk'];
 export const featuredProducts=products=>FEATURED_IDS.map(id=>products.find(p=>p.id===id)).filter(Boolean);
@@ -31,18 +32,59 @@ export function displayDetailPose(index,mode,count,width){
  return {position:[x+pose.position[0]*scale,y+pose.position[1]*scale,(pose.position[2]+.5)*scale-.5],target:[x+pose.target[0]*scale,y+pose.target[1]*scale,pose.target[2]]};
 }
 
-export const clampReveal=value=>Number.isFinite(value)?Math.max(0,Math.min(1,value)):0;
-export const HOME_REVEAL_SCREENS=HERO_CONFIG.scrollScreens+HERO_CONFIG.revealScreens;
+export const HOME_REVEAL_SCREENS=HERO_CONFIG.scrollScreens;
 export const HOME_HOLD_SCREENS=HERO_CONFIG.holdScreens;
-export const HOME_STORY_FRACTION=HERO_CONFIG.scrollScreens/HOME_REVEAL_SCREENS;
-export const smoothRange=(start,end,value)=>{const t=clampReveal((value-start)/(end-start));return t*t*t*(10+t*(-15+6*t));};
-export function homeRevealLayers(value){
- const progress=clampReveal(value),storyProgress=clampReveal(progress/HOME_STORY_FRACTION),wallProgress=clampReveal((progress-HOME_STORY_FRACTION)/(1-HOME_STORY_FRACTION));
- return {storyProgress,wallProgress,brandOpacity:1-smoothRange(0,HERO_CONFIG.camera.brandFadeEnd,wallProgress),collectionOpacity:smoothRange(HERO_CONFIG.camera.labelsStart,1,wallProgress),selectionReady:progress>=.999};
+const mix=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+const mixCamera=(a,b,t)=>({position:mix(a.position,b.position,t),target:mix(a.target,b.target,t)});
+const frustum=2*Math.tan(32*Math.PI/360);
+
+export function homeStoryState(value,count,width,height){
+ const progress=clampReveal(value), aspect=Math.max(.2,width/Math.max(1,height));
+ const compact=width<=760||aspect<1.1;
+ const end=displayPose('featured',count,width,height);
+ const bottleZ=.86, baseY=6.45;
+ const openingHeight=NICHE.bottleHeight/(compact?.40:.55);
+ const openingDistance=openingHeight/frustum;
+ const x=end.target[0]+(compact?.095:.22)*openingHeight*aspect;
+ const openingBottlePosition=[x,baseY,bottleZ];
+ const environmentHeight=(openingDistance+bottleZ-.22)*frustum;
+ const environment={height:environmentHeight,width:Math.max(16/9,aspect*1.13)*environmentHeight};
+ const source=[x-.035,baseY+environmentHeight*.55,.24];
+ const shot=(viewHeight,y,bottleScreenX)=>{
+  const cx=x-(bottleScreenX-.5)*viewHeight*aspect;
+  return {position:[cx,y,viewHeight/frustum+bottleZ],target:[cx,y,0]};
+ };
+ const opening=shot(openingHeight,baseY+openingHeight*(compact?.385:.33),compact?.595:.72);
+ const macro=shot(openingHeight*(compact?.68:.54),baseY+(compact?2.7:2.68),compact?.565:.73);
+ const pourHeight=openingHeight*(compact?1.10:.88);
+ const pour=shot(pourHeight,baseY+pourHeight*(compact?.37:.39),compact?.585:.71);
+ const cell=displayCell(0,'featured',count,width);
+ const dock=[cell.x,cell.y+.75*cell.scale,NICHE.bottleZ];
+ const move=smoothRange(.805,.925,progress), inset=smoothRange(.925,.995,progress);
+ const clearance=[dock[0],dock[1],1.15];
+ const position=inset===1?dock:progress>=.925?mix(clearance,dock,inset):mix(openingBottlePosition,clearance,move);
+ if(move>0&&move<1)position[2]+=.64*Math.sin(move*Math.PI);
+ const lift=smoothRange(.125,.30,progress), align=smoothRange(.675,.735,progress), close=smoothRange(.735,.795,progress);
+ const stow=smoothRange(.275,.415,progress)*(1-smoothRange(.665,.732,progress));
+ let camera=opening;
+ if(progress>=.925)camera=end;
+ else if(progress>=.805)camera=mixCamera(opening,end,move);
+ else if(progress>=.72)camera=mixCamera(pour,opening,smoothRange(.72,.805,progress));
+ else if(progress>=.345)camera=mixCamera(macro,pour,smoothRange(.345,.455,progress));
+ else camera=mixCamera(opening,macro,smoothRange(.07,.265,progress));
+ return {
+  camera, environment, openingBottlePosition, source,
+  bottle:{position,rotation:[0,0,0],scale:1+(cell.scale-1)*move},
+  cap:{offset:[.88*lift*(1-align)+(compact?1.28:.19)*stow,.83*lift*(1-close)+(compact?3.6:1.95)*stow,0-.09*lift*(1-align)],rotation:[.12*lift*(1-align),1.35*lift*(1-align),0-.16*lift*(1-align)]},
+  capTrail:Math.max(smoothRange(.13,.19,progress)*(1-smoothRange(.26,.33,progress)),smoothRange(.702,.742,progress)*(1-smoothRange(.784,.814,progress))),
+  trailPhase:progress<.5?smoothRange(.13,.33,progress):1-smoothRange(.70,.81,progress),
+  fill:smoothRange(.49,.689,progress),
+  stream:smoothRange(.397,.444,progress)*(1-smoothRange(.662,.703,progress)),
+  streamReach:smoothRange(.405,.489,progress),streamDrain:smoothRange(.651,.701,progress),
+  runoff:smoothRange(.34,.423,progress),runoffOpacity:1-smoothRange(.642,.688,progress),
+  storyOpacity:1-smoothRange(.805,.931,progress),
+  storyLight:1-smoothRange(.82,.996,progress),
+  shelfArtwork:smoothRange(.979,.998,progress)
+ };
 }
-export function homeRevealPose(value,count,width,height){
- const progress=homeRevealLayers(value).wallProgress,end=displayPose('featured',count,width,height),t=smoothRange(0,HERO_CONFIG.camera.settleAt,progress);
- if(t===1)return end;
- const x=end.target[0],opening={position:[x,HERO_CONFIG.camera.height,HERO_CONFIG.camera.distance],target:[x,HERO_CONFIG.camera.height,HERO_CONFIG.camera.targetDepth]};
- return {position:opening.position.map((v,i)=>v+(end.position[i]-v)*t),target:opening.target.map((v,i)=>v+(end.target[i]-v)*t)};
-}
+export const homeRevealPose=(value,count,width,height)=>homeStoryState(value,count,width,height).camera;
