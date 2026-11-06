@@ -8,9 +8,12 @@ const screens=[[1440,900],[1024,768],[390,844],[320,740]];
 test('the empty vessel opens before the oil arrives, then closes before departure',()=>{
  for(const [width,height] of screens){
   const frame=p=>homeStoryState(p,5,width,height);
-  const opening=frame(0),uncapped=frame(.30),pouring=frame(.56),finished=frame(.805);
+  const opening=frame(0),threaded=frame(.22),uncapped=frame(.30),pouring=frame(.56),finished=frame(.805);
   assert.equal(opening.fill,0);
   assert.deepEqual(opening.cap.offset,[0,0,0]);
+  assert.equal(threaded.cap.offset[0],0);
+  assert.ok(threaded.cap.rotation[1]>Math.PI*2);
+  assert.ok(threaded.cap.offset[1]>0&&threaded.cap.offset[1]<.25);
   assert.ok(uncapped.cap.offset[1]>.6);
   assert.ok(uncapped.camera.position[2]<opening.camera.position[2]);
   assert.equal(uncapped.stream,0);
@@ -20,6 +23,7 @@ test('the empty vessel opens before the oil arrives, then closes before departur
   assert.equal(finished.fill,1);
   assert.equal(finished.stream,0);
   assert.deepEqual(finished.cap.offset,[0,0,0]);
+  assert.deepEqual(finished.cap.rotation,[0,0,0]);
  }
 });
 

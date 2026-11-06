@@ -56,7 +56,7 @@ export function homeStoryState(value,count,width,height){
   return {position:[cx,y,viewHeight/frustum+bottleZ],target:[cx,y,0]};
  };
  const opening=shot(openingHeight,baseY+openingHeight*(compact?.385:.33),compact?.595:.72);
- const macro=shot(openingHeight*(compact?.74:.63),baseY+(compact?2.7:2.68),compact?.565:.73);
+ const macro=shot(openingHeight*(compact?.62:.48),baseY+2.91,compact?.54:.70);
  const pourHeight=openingHeight*(compact?1.10:.88);
  const pour=shot(pourHeight,baseY+pourHeight*(compact?.37:.39),compact?.585:.71);
  const cell=displayCell(0,'featured',count,width);
@@ -65,20 +65,22 @@ export function homeStoryState(value,count,width,height){
  const clearance=[dock[0],dock[1],1.15];
  const position=inset===1?dock:progress>=.925?mix(clearance,dock,inset):mix(openingBottlePosition,clearance,move);
  if(move>0&&move<1)position[2]+=.64*Math.sin(move*Math.PI);
- const lift=smoothRange(.125,.30,progress), align=smoothRange(.675,.735,progress), close=smoothRange(.735,.795,progress);
- const stow=smoothRange(.275,.415,progress)*(1-smoothRange(.665,.732,progress));
+ const twist=smoothRange(.13,.255,progress),release=smoothRange(.245,.33,progress);
+ const align=smoothRange(.68,.738,progress),close=smoothRange(.738,.795,progress);
+ const stow=smoothRange(.315,.425,progress)*(1-smoothRange(.665,.726,progress));
+ const free=release*(1-align),thread=twist*(1-close);
  let camera=opening;
  if(progress>=.925)camera=end;
  else if(progress>=.805)camera=mixCamera(opening,end,move);
  else if(progress>=.72)camera=mixCamera(pour,opening,smoothRange(.72,.805,progress));
  else if(progress>=.345)camera=mixCamera(macro,pour,smoothRange(.345,.455,progress));
- else camera=mixCamera(opening,macro,smoothRange(.07,.265,progress));
+ else camera=mixCamera(opening,macro,smoothRange(.055,.205,progress));
  return {
   camera, environment, openingBottlePosition, source,
   bottle:{position,rotation:[0,0,0],scale:1+(cell.scale-1)*move},
-  cap:{offset:[.88*lift*(1-align)+(compact?1.28:.19)*stow,.83*lift*(1-close)+(compact?3.6:1.95)*stow,0-.09*lift*(1-align)],rotation:[.12*lift*(1-align),1.35*lift*(1-align),0-.16*lift*(1-align)]},
-  capTrail:Math.max(smoothRange(.13,.19,progress)*(1-smoothRange(.26,.33,progress)),smoothRange(.702,.742,progress)*(1-smoothRange(.784,.814,progress))),
-  trailPhase:progress<.5?smoothRange(.13,.33,progress):1-smoothRange(.70,.81,progress),
+  cap:{offset:[(compact?.33:.63)*free+(compact?1.97:.45)*stow,.24*thread+.57*free+(compact?3.6:1.95)*stow,0-(compact?.26:.12)*free],rotation:[.15*free,Math.PI*3*thread+.57*free,0-.23*free]},
+  capTrail:Math.max(smoothRange(.135,.17,progress)*(1-smoothRange(.265,.325,progress)),smoothRange(.718,.75,progress)*(1-smoothRange(.781,.81,progress))),
+  trailPhase:progress<.5?twist:thread,
   fill:smoothRange(.49,.689,progress),
   stream:smoothRange(.397,.444,progress)*(1-smoothRange(.662,.703,progress)),
   streamReach:smoothRange(.405,.489,progress),streamDrain:smoothRange(.651,.701,progress),
