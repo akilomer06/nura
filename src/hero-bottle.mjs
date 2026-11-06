@@ -53,14 +53,28 @@ export function createHeroBottle({texture,environment,resources}){
    }
    if(material.userData.finish==='glass-body'){
     shader.uniforms.nuraLiquidLevel=level;
+    shader.uniforms.nuraRipple=ripple;
     shader.vertexShader='varying vec3 glassLocal;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nglassLocal=position;');
-    shader.fragmentShader='varying vec3 glassLocal; uniform float nuraLiquidLevel;\n'+shader.fragmentShader.replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
-     float wet=smoothstep(-.865,-.79,nuraLiquidLevel)*smoothstep(-.85,-.75,glassLocal.y)*smoothstep(0.0,.07,nuraLiquidLevel+.075-glassLocal.y);
-     float edge=(abs(glassLocal.x)-.493)/.035;
-     float base=(glassLocal.y+.766)/.032;
-     float stripe=exp(-edge*edge)*smoothstep(.05,.24,glassLocal.z);
-     float lower=exp(-base*base)*(1.0-smoothstep(.07,.43,abs(glassLocal.x+.06)))*smoothstep(.10,.29,glassLocal.z);
-     totalEmissiveRadiance+=vec3(1.27,.64,.035)*wet*(stripe*.36+lower*.58);`);
+    // Color the light transmitted through the filled part of the glass. Small
+    // caustics keep the oil's gold visible after the softened refraction pass.
+    shader.fragmentShader='varying vec3 glassLocal; uniform float nuraLiquidLevel; uniform float nuraRipple;\n'+shader.fragmentShader.replace('#include <transmission_fragment>',`#include <transmission_fragment>
+     float chamberX=glassLocal.x/.525;
+     float chamberEdge=abs(chamberX);
+     float waterline=nuraLiquidLevel+.075+.024*chamberX*chamberX+.007*sin(chamberX*11.0+nuraRipple);
+     float belowLine=waterline-glassLocal.y;
+     float floorY=-.795+.047*chamberX*chamberX;
+     float wet=smoothstep(-.865,-.81,nuraLiquidLevel)*smoothstep(floorY-.01,floorY+.021,glassLocal.y)
+       *smoothstep(-.012,.024,belowLine)*(1.0-smoothstep(.95,1.055,chamberEdge))*smoothstep(.02,.23,glassLocal.z);
+     float fold=.5+.5*cos(chamberX*6.4+glassLocal.y*.54-.32);
+     vec3 oilColor=mix(vec3(.19,.052,.0012),vec3(.74,.345,.006),fold);
+     float key=(chamberX+.80)/.115;
+     float bounce=(chamberX-.86)/.13;
+     float foot=(glassLocal.y-floorY-.024)/.024;
+     float lip=(belowLine-.014)/.016;
+     float caustic=exp(-key*key)*.60+exp(-bounce*bounce)*.43;
+     caustic+=exp(-foot*foot)*(.34+.38*fold)+exp(-lip*lip)*.38;
+     totalDiffuse=mix(totalDiffuse,oilColor,wet*.84);
+     totalSpecular+=vec3(1.36,.74,.112)*wet*caustic;`);
    }
    if(material.userData.finish==='gold-cap'){
     shader.vertexShader='varying vec3 capLocal;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ncapLocal=position;');
