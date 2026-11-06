@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {smoothRange} from './hero-story.mjs';
+import {oilGold} from './hero-oil.mjs';
 
 export function createBottleEnvironment(renderer,resources){
  const studio=new THREE.Scene();studio.background=new THREE.Color(0x514939);
@@ -43,7 +44,23 @@ export function createHeroBottle({texture,environment,resources}){
      float waterline=nuraLiquidLevel+.012*pow(edge,5.0)+.009*sin(liquidLocal.x*21.0+nuraRipple)*sin(nuraRipple*.36);
      float surfaceGap=waterline-liquidLocal.y;
      if(surfaceGap<0.0)discard;`).replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
-     totalEmissiveRadiance+=vec3(.72,.40,.095)*(1.0-smoothstep(.002,.024,surfaceGap))*.58;`);
+     float meniscus=1.0-smoothstep(.002,.024,surfaceGap);
+     float wall=smoothstep(.68,.97,abs(liquidLocal.x)*1.9);
+     float foot=smoothstep(-.855,-.80,liquidLocal.y)*(1.0-smoothstep(-.79,-.69,liquidLocal.y));
+     float glint=1.0-smoothstep(.04,.46,abs(liquidLocal.x+.07));
+     diffuseColor.rgb*=.48+.28*wall;
+     totalEmissiveRadiance+=vec3(1.48,.73,.029)*(meniscus*.44+wall*.15+foot*(.10+glint*.31));`);
+   }
+   if(material.userData.finish==='glass-body'){
+    shader.uniforms.nuraLiquidLevel=level;
+    shader.vertexShader='varying vec3 glassLocal;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nglassLocal=position;');
+    shader.fragmentShader='varying vec3 glassLocal; uniform float nuraLiquidLevel;\n'+shader.fragmentShader.replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+     float wet=smoothstep(-.865,-.79,nuraLiquidLevel)*smoothstep(-.85,-.75,glassLocal.y)*smoothstep(0.0,.07,nuraLiquidLevel+.075-glassLocal.y);
+     float edge=(abs(glassLocal.x)-.493)/.035;
+     float base=(glassLocal.y+.766)/.032;
+     float stripe=exp(-edge*edge)*smoothstep(.05,.24,glassLocal.z);
+     float lower=exp(-base*base)*(1.0-smoothstep(.07,.43,abs(glassLocal.x+.06)))*smoothstep(.10,.29,glassLocal.z);
+     totalEmissiveRadiance+=vec3(1.27,.64,.035)*wet*(stripe*.36+lower*.58);`);
    }
    if(material.userData.finish==='gold-cap'){
     shader.vertexShader='varying vec3 capLocal;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ncapLocal=position;');
@@ -57,10 +74,11 @@ export function createHeroBottle({texture,environment,resources}){
   };return material;
  };
  const glass=shade(new THREE.MeshPhysicalMaterial({color:0xf0f4ec,metalness:0,roughness:.065,transmission:.96,thickness:.095,ior:1.46,envMap:environment,envMapIntensity:1.45}));
+ const bodyGlass=glass.clone();bodyGlass.userData.finish='glass-body';shade(bodyGlass);
  const gold=new THREE.MeshStandardMaterial({color:0xe8b24d,metalness:1,roughness:.13,envMap:environment,envMapIntensity:1.1});
  gold.userData.finish='gold-cap';shade(gold);
  const mesh=(geometry,material,parent=root)=>{own(geometry);const object=new THREE.Mesh(geometry,material);parent.add(object);return object;};
- mesh(new RoundedBoxGeometry(1.112,2.14,.63,5,.20),glass).position.y=1.07;
+ mesh(new RoundedBoxGeometry(1.112,2.14,.63,5,.20),bodyGlass).position.y=1.07;
  const baseGlass=shade(new THREE.MeshPhysicalMaterial({color:0xffffff,metalness:0,roughness:.035,transmission:1,thickness:.18,ior:1.46,envMap:environment,envMapIntensity:.45}));
  mesh(new RoundedBoxGeometry(1.078,.27,.59,4,.12),baseGlass).position.y=.15;
  const neckProfile=[[.15,2.01],[.22,2.04],[.24,2.10],[.22,2.12],[.206,2.15],[.23,2.16],[.23,2.18],[.206,2.19],[.23,2.21],[.23,2.23],[.208,2.24],[.228,2.26],[.224,2.29],[.16,2.29],[.15,2.25],[.15,2.01]].map(([x,y])=>new THREE.Vector2(x,y));
@@ -75,10 +93,10 @@ export function createHeroBottle({texture,environment,resources}){
  const labelMesh=mesh(decalGeometry,labelMaterial);labelMesh.position.y=1.210;
  // Opaque interior enters Three's transmission buffer, so the outer glass can
  // refract the amber volume instead of sampling straight through it to the wall.
- const liquidMaterial=new THREE.MeshPhysicalMaterial({color:0xc77718,roughness:.085,clearcoat:.95,envMap:environment,envMapIntensity:1.18,emissive:0x954005,emissiveIntensity:.21});
+ const liquidMaterial=new THREE.MeshPhysicalMaterial({color:oilGold.gold,roughness:.061,clearcoat:1,clearcoatRoughness:.045,envMap:environment,envMapIntensity:1.4,emissive:oilGold.amber,emissiveIntensity:.14});
  liquidMaterial.userData.finish='liquid';shade(liquidMaterial);
  const liquid=mesh(new RoundedBoxGeometry(1.055,1.73,.53,5,.14),liquidMaterial);liquid.position.y=1.145;
- const surfaceMaterial=shade(new THREE.MeshPhysicalMaterial({color:0xe6a02f,roughness:.07,clearcoat:1,envMap:environment,envMapIntensity:1.35}));
+ const surfaceMaterial=shade(new THREE.MeshPhysicalMaterial({color:oilGold.highlight,roughness:.055,clearcoat:1,envMap:environment,envMapIntensity:1.45}));
  const surface=mesh(new RoundedBoxGeometry(1.035,.012,.505,3,.10),surfaceMaterial);
  const rimMaterial=shade(new THREE.MeshBasicMaterial({color:0xffedb9,transparent:true,opacity:0,depthWrite:false,toneMapped:false}));
  const rimPoints=[];for(let corner=0;corner<4;corner++){const cx=corner===0||corner===3?.37:-.37,cy=corner<2?1.96:.18;for(let j=0;j<=10;j++){const a=(corner*90+j*9)*Math.PI/180;rimPoints.push(new THREE.Vector3(cx+Math.cos(a)*.16,cy+Math.sin(a)*.16,.24));}}

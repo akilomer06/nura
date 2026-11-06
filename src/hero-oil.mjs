@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 
 const {lerp,smoothstep}=THREE.MathUtils;
+// Midtones and highlights from the oil visible below Althaïr's shelf label.
+export const oilGold={amber:0xd68c01,gold:0xe89c02,highlight:0xf2c245};
 
 // Oval sections keep the oil broad over the ledge and rounded in free fall.
 function oilSurface(path,lip,ledgeDepth){
@@ -45,8 +47,8 @@ function oilSurface(path,lip,ledgeDepth){
 
 function oilMaterial(environment,uniforms){
  const material=new THREE.MeshPhysicalMaterial({
-  color:0xc58e23,roughness:.05,metalness:.63,transmission:.17,thickness:.105,ior:1.465,
-  attenuationColor:0xf9b732,attenuationDistance:.40,clearcoat:1,clearcoatRoughness:.046,
+  color:oilGold.amber,roughness:.046,metalness:.63,transmission:.17,thickness:.105,ior:1.465,
+  attenuationColor:oilGold.highlight,attenuationDistance:.40,clearcoat:1,clearcoatRoughness:.041,
   envMap:environment,envMapIntensity:2.25,transparent:true,depthWrite:false
  });
  material.onBeforeCompile=shader=>{
@@ -67,7 +69,7 @@ function oilMaterial(environment,uniforms){
    float vein=exp(-veinOffset*veinOffset);
    diffuseColor.a*=mix(oilFilm,oilFall,smoothstep(oilLip-.018,oilLip+.024,oilUv.x));
    diffuseColor.rgb*=.48+.27*facing+.08*swirl;
-   totalEmissiveRadiance+=vec3(1.87,1.36,.65)*(strip*.90+reflectedSky*.63+vein*.25+rim)*(.82+.18*swirl);`);
+   totalEmissiveRadiance+=vec3(1.87,1.21,.28)*(strip*.90+reflectedSky*.63+vein*.25+rim)*(.82+.18*swirl);`);
  };
  return material;
 }
@@ -79,7 +81,7 @@ export function createRockStream({source,bottlePosition,resources,environment,su
  const uniforms={oilFlow:{value:0},oilReach:{value:0},oilDrain:{value:0},oilLip:{value:0},oilFilm:{value:0},oilFall:{value:0}};
  const material=own(oilMaterial(environment,uniforms));
  const stream=new THREE.Mesh(undefined,material);root.add(stream);stream.renderOrder=2;
- const dropMaterial=own(new THREE.MeshPhysicalMaterial({color:0xe99a25,metalness:.42,roughness:.055,clearcoat:1,envMap:environment,envMapIntensity:2,transparent:true,depthWrite:false}));
+ const dropMaterial=own(new THREE.MeshPhysicalMaterial({color:oilGold.gold,metalness:.42,roughness:.05,clearcoat:1,envMap:environment,envMapIntensity:2,transparent:true,depthWrite:false}));
  const dropProfile=[[0,-.086],[.030,-.082],[.059,-.049],[.061,-.018],[.048,.025],[.024,.075],[.012,.117],[0,.153]].map(([r,y])=>new THREE.Vector2(r,y));
  const drop=new THREE.Mesh(own(new THREE.LatheGeometry(dropProfile,32)),dropMaterial);root.add(drop);drop.renderOrder=3;
  let curve,lip;
