@@ -6,10 +6,8 @@ import {bottleBlendGLSL,bottleBlendMaterial,setBottleBlend} from './bottle-blend
 import {createHeroBottle,createBottleEnvironment} from './hero-bottle.mjs';
 import {createRockStream} from './hero-oil.mjs';
 import {createStoneFormation} from './stone-formation.mjs';
-import {HERO_CONFIG} from './hero-story.mjs';
+import {HERO_CONFIG,smoothRange} from './hero-story.mjs';
 import {Reflector} from 'three/addons/objects/Reflector.js';
-import {HorizontalBlurShader} from 'three/addons/shaders/HorizontalBlurShader.js';
-import {VerticalBlurShader} from 'three/addons/shaders/VerticalBlurShader.js';
 import {NICHE,galleryPose,detailPose,cameraEase,clampIndex,visibleCount} from './scene-layout.mjs';
 import {displayLayout,displayCell,displayPose,displayDetailPose,ROW_PITCH,homeStoryState,clampReveal} from './collection-layout.mjs';
 
@@ -27,11 +25,11 @@ export default function SceneGallery({items,index,selectedId,selectedFormat='oil
   setFailedImages(new Set());
   let renderer;
   try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});}catch{setFallback(true);setLoaded(true);onReady?.();onMotion?.(false);onFallback?.();return;}
-  // Supersample desktop labels even on 1x displays, then let the browser
-  // resolve the canvas to its display size with proper subpixel coverage.
-  renderer.setPixelRatio(innerWidth>700?2:Math.min(devicePixelRatio,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;
+  // Keep the same canvas allocation throughout the home sequence and shelf landing.
+  const pixelRatio=width=>revealProgressRef?Math.min(devicePixelRatio,width>760?1.2:1.1):width>700?2:Math.min(devicePixelRatio,1.5);
+  renderer.setPixelRatio(pixelRatio(innerWidth));renderer.outputColorSpace=THREE.SRGBColorSpace;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;
-  renderer.transmissionResolutionScale=.5;
+  renderer.transmissionResolutionScale=revealProgressRef?.38:.5;
   renderer.setClearColor(0x080b0a);mount.appendChild(renderer.domElement);
   renderer.domElement.setAttribute('aria-hidden','true');
   const scene=new THREE.Scene();scene.background=new THREE.Color(0x080b0a);scene.fog=new THREE.FogExp2(0x080b0a,.016);
@@ -39,10 +37,10 @@ export default function SceneGallery({items,index,selectedId,selectedFormat='oil
   scene.add(new THREE.HemisphereLight(0xc7d0ca,0x1c231f,1.25));
   const moon=new THREE.DirectionalLight(0xd1d9d4,2.2);moon.position.set(-10,12,13);scene.add(moon);
   const bounce=new THREE.DirectionalLight(0x477356,.45);bounce.position.set(10,3,12);scene.add(bounce);
-  let assetsReady=false,readyNotified=false;
-  const manager=new THREE.LoadingManager(()=>{assetsReady=true;}),loader=new THREE.TextureLoader(manager),resources=[],bottles=[],lamps=[],zones=[];
+  let assetsReady=false,readyNotified=false,warmStarted=false;
+  const manager=new THREE.LoadingManager(()=>{assetsReady=true;}),loader=new THREE.TextureLoader(manager),detailLoader=new THREE.TextureLoader(),resources=[],bottles=[],lamps=[],zones=[];
   delete element.dataset.heroActorReady;
-  let hero,formation,heroStream,plateReady=false;
+  let hero,formation,heroStream,plateReady=false,textureChanged=false;
   const heroIndex=revealProgressRef?items.findIndex(product=>product.id===HERO_CONFIG.product):-1;
   const plate=heroIndex>=0?loader.load(HERO_CONFIG.backdrop,()=>{plateReady=true;},undefined,()=>{if(!stopped)props.current.onFallback?.();}):null;
   if(plate){plate.colorSpace=THREE.SRGBColorSpace;plate.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());resources.push(plate);}
@@ -121,40 +119,50 @@ export default function SceneGallery({items,index,selectedId,selectedFormat='oil
     const geometry=new THREE.PlaneGeometry(1,1),mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{map:{value:null},brightness:{value:.25},...bottleMat.userData.blend},vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'uniform sampler2D map;uniform float brightness;varying vec2 vUv;'+bottleBlendGLSL+'void main(){vec2 uv=vec2(vUv.x,(1.0-vUv.y)*.4);vec4 c=vec4(0.0);for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++)c+=sampleBottle(uv+vec2(float(x),float(y))*.009);c/=9.0;gl_FragColor=vec4(c.rgb*.37*brightness,c.a*pow(vUv.y,2.0)*.4);\n#include <colorspace_fragment>\n}'});
     const mesh=new THREE.Mesh(geometry,mat);mesh.position.set(x,.25,NICHE.bottleZ+.015);room.add(mesh);reflectionMaterial={mat,mesh};resources.push(geometry,mat);
    }
-   const record={id:product.id,material:bottleMat,reflectionMaterial,brightness:.56,mesh:bottle,textures:{},cellScale:cell.scale,activeFormat:null,transition:null,formatOpacity:1,baseY:bottle.position.y,baseZ:bottle.position.z};
+   const record={id:product.id,product,material:bottleMat,reflectionMaterial,brightness:.56,mesh:bottle,textures:{},detailTextures:{},detailRequested:new Set(),cellScale:cell.scale,activeFormat:null,transition:null,formatOpacity:1,baseX:x,baseY:bottle.position.y,baseZ:bottle.position.z};
    bottles.push(record);
-   for(const format of ['oil','perfume'])loader.load(bottleArtwork(product,format),texture=>{
+   for(const format of ['oil','perfume'])loader.load(bottleArtwork(product,format,!!revealProgressRef&&i!==heroIndex),texture=>{
     if(stopped){texture.dispose();return;}texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=renderer.capabilities.getMaxAnisotropy();
     // Proper minification plus the supersampled canvas preserves fine strokes
     // without the jagged/shimmering edges of sampling the full-size image directly.
     texture.generateMipmaps=true;texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;
-    record.textures[format]=texture;resources.push(texture);
+    record.textures[format]=texture;resources.push(texture);textureChanged=true;
+    if(revealProgressRef)renderer.initTexture(texture);
    },undefined,()=>{if(stopped||format!=='oil')return;setFailedImages(previous=>new Set([...previous,product.id]));if(i===heroIndex)props.current.onFallback?.();});
    zones.push({id:product.id,index:i,labelPoint:new THREE.Vector3(x,cell.y+(.75+NICHE.bottleHeight/2)*cell.scale,NICHE.bottleZ),corners:[new THREE.Vector3(x-NICHE.width/2,cell.y+NICHE.top*cell.scale,.12),new THREE.Vector3(x+NICHE.width/2,cell.y+NICHE.bottom*cell.scale,.12)]});
    if(cell.scale!==1||cell.y!==0){const meshes=room.children.slice(firstMesh),group=new THREE.Group();group.position.y=cell.y;group.scale.y=cell.scale;meshes.forEach(mesh=>group.add(mesh));room.add(group);}
 
   });
-  const activeSpot=new THREE.SpotLight(0x73eaa0,0,8,.39,.95,1.2),activeBacklight=new THREE.PointLight(0x28c77b,0,5,1.5);room.add(activeSpot,activeSpot.target,activeBacklight);let activeLamp=null;
-  const reflectionShader={...Reflector.ReflectorShader,uniforms:{...THREE.UniformsUtils.clone(Reflector.ReflectorShader.uniforms),uTime:{value:0}},fragmentShader:Reflector.ReflectorShader.fragmentShader.replace('uniform vec3 color;','uniform vec3 color; uniform float uTime;').replace('vec4 base = texture2DProj( tDiffuse, vUv );',`vec4 reflectedUv=vUv;float ripple=sin(vUv.y*210.0+uTime*.23)*.00015+sin(vUv.y*570.0-uTime*.13)*.00008;reflectedUv.x+=ripple*vUv.w;vec4 base=texture2DProj(tDiffuse,reflectedUv);`).replace('vec4( blendOverlay( base.rgb, color ), 1.0 )','vec4( blendOverlay( base.rgb, color ) * .76, 1.0 )')};
-  const floorGeo=new THREE.PlaneGeometry(total+100,90),floor=new Reflector(floorGeo,{clipBias:.003,textureWidth:Math.min(innerWidth*devicePixelRatio,1800),textureHeight:Math.min(innerHeight*devicePixelRatio,1200),color:0x9aab9e,multisample:0,shader:reflectionShader});floor.rotation.x=-Math.PI/2;floor.position.set(center,.45,16);scene.add(floor);floor.visible=!stacked&&layout!=='shelf';resources.push(floorGeo);
-  // Blur the mirror texture itself in two separable passes: smooth frosted reflections,
-  // without ghosted duplicate samples or blurring the bottle and stone geometry.
-  const blurWidth=640,blurHeight=480,blurA=new THREE.WebGLRenderTarget(blurWidth,blurHeight),blurB=new THREE.WebGLRenderTarget(blurWidth,blurHeight);
-  const horizontal=new THREE.ShaderMaterial(HorizontalBlurShader),vertical=new THREE.ShaderMaterial(VerticalBlurShader);
-  horizontal.uniforms=THREE.UniformsUtils.clone(HorizontalBlurShader.uniforms);vertical.uniforms=THREE.UniformsUtils.clone(VerticalBlurShader.uniforms);horizontal.uniforms.h.value=1.8/blurWidth;vertical.uniforms.v.value=2.5/blurHeight;
-  const blurScene=new THREE.Scene(),blurCamera=new THREE.OrthographicCamera(-1,1,1,-1,0,1),blurQuad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),horizontal);blurScene.add(blurQuad);resources.push(blurA,blurB,horizontal,vertical,blurQuad.geometry);
-  const reflect=floor.onBeforeRender,viewport=new THREE.Vector4();
-  floor.onBeforeRender=function(...args){reflect.apply(this,args);const target=renderer.getRenderTarget(),xr=renderer.xr.enabled;renderer.getViewport(viewport);renderer.xr.enabled=false;horizontal.uniforms.tDiffuse.value=floor.getRenderTarget().texture;blurQuad.material=horizontal;renderer.setRenderTarget(blurA);renderer.render(blurScene,blurCamera);vertical.uniforms.tDiffuse.value=blurA.texture;blurQuad.material=vertical;renderer.setRenderTarget(blurB);renderer.render(blurScene,blurCamera);floor.material.uniforms.tDiffuse.value=blurB.texture;renderer.setRenderTarget(target);renderer.setViewport(viewport);renderer.xr.enabled=xr;};
+  const activeSpot=new THREE.SpotLight(0x73eaa0,0,8,.39,.95,1.2),activeBacklight=new THREE.PointLight(0x28c77b,0,5,1.5);
+  scene.add(activeSpot,activeSpot.target,activeBacklight);let activeLamp=null;
+  // A mip level of the smaller mirror target softens the floor in one sample.
+  const reflectionShader={...Reflector.ReflectorShader,uniforms:{...THREE.UniformsUtils.clone(Reflector.ReflectorShader.uniforms),uReflection:{value:1}},fragmentShader:Reflector.ReflectorShader.fragmentShader.replace('uniform vec3 color;','uniform vec3 color; uniform float uReflection;').replace('vec4 base = texture2DProj( tDiffuse, vUv );','vec4 base = textureLod(tDiffuse, vUv.xy / vUv.w, 3.05);').replace('vec4( blendOverlay( base.rgb, color ), 1.0 )','vec4( blendOverlay( base.rgb, color ) * .76, uReflection )')};
+  const floorGeo=new THREE.PlaneGeometry(total+100,90),floor=new Reflector(floorGeo,{clipBias:.003,textureWidth:640,textureHeight:384,color:0x9aab9e,multisample:0,shader:reflectionShader});floor.rotation.x=-Math.PI/2;floor.position.set(center,.45,16);floor.material.transparent=true;scene.add(floor);floor.visible=!stacked&&layout!=='shelf';resources.push(floorGeo);
+  const reflectionTexture=floor.getRenderTarget().texture;reflectionTexture.generateMipmaps=true;reflectionTexture.minFilter=THREE.LinearMipmapLinearFilter;
+  // The mirror picks up the arriving artwork without a second glass refraction pass.
+  const renderReflection=floor.onBeforeRender;
+  floor.onBeforeRender=function(...args){
+   const actor=hero?.root,wasVisible=actor?.visible;
+   if(wasVisible)actor.visible=false;
+   try{renderReflection.apply(this,args);}finally{if(wasVisible)actor.visible=true;}
+  };
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
   let homeProgress=clampReveal(props.current.revealProgressRef?.current??0);
-  let heroStillFrame=false,inView=true;
+  let inView=true,renderedKey='',renderedHover=null,renderedFormat=null,renderedInteraction=false,renderedScrollY=-1,lampsSettling=false;
   const frameSamples=new Float64Array(240);let sampleCount=0,sampleCursor=0;
   const visibilityObserver=revealProgressRef?new IntersectionObserver(entries=>{inView=entries[0].isIntersecting;}):null;
   if(visibilityObserver)visibilityObserver.observe(element.closest('.home-experience'));
   const widePose=(config,w,h,story)=>config.revealProgressRef?(story??homeStoryState(homeProgress,items.length,w,h)).camera:structured?displayPose(layout,items.length,w,h,{scroll:scrollY,top:config.shelfTop}):galleryPose(config.index,items.length,w,h);
   let width=innerWidth,height=innerHeight,currentPose=widePose(props.current,width,height),motion=null,lastKey='',animationFrame,stopped=false,drag=null,swallowClick=false,lastTime=performance.now(),renderedOnce=false;
   camera.position.fromArray(currentPose.position);let look=new THREE.Vector3(...currentPose.target);camera.lookAt(look);
-  const resize=()=>{width=element.clientWidth;height=element.clientHeight;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();heroStillFrame=false;sampleCount=0;sampleCursor=0;};
+  const resize=()=>{
+   const nextWidth=element.clientWidth,nextHeight=element.clientHeight;
+   if(!nextWidth||!nextHeight)return;
+   width=nextWidth;height=nextHeight;
+   const ratio=pixelRatio(width);
+   if(renderer.getPixelRatio()!==ratio)renderer.setPixelRatio(ratio);
+   renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();renderedKey='';sampleCount=0;sampleCursor=0;
+  };
   const observer=new ResizeObserver(resize);observer.observe(element);resize();
   const contextLost=()=>{if(stopped)return;setFallback(true);setLoaded(true);props.current.onMotion?.(false);props.current.onFallback?.();};
   renderer.domElement.addEventListener('webglcontextlost',contextLost);
@@ -165,13 +173,31 @@ export default function SceneGallery({items,index,selectedId,selectedFormat='oil
   const pointerCancel=()=>{if(drag?.moved)startMotion(galleryPose(props.current.index,items.length,width,height),250);drag=null;swallowClick=false;};
   const clickCapture=e=>{if(swallowClick){e.preventDefault();e.stopPropagation();swallowClick=false;}};
   const wheel=e=>{if(structured||props.current.selectedId||Math.abs(e.deltaX)<=Math.abs(e.deltaY))return;e.preventDefault();if(Math.abs(e.deltaX)>8){const next=clampIndex(props.current.index+Math.sign(e.deltaX),items.length,width);props.current.onIndexChange(next);}};
+  const loadDetail=(bottle,format)=>{
+   if(bottle.detailRequested.has(format))return;
+   bottle.detailRequested.add(format);
+   const url=bottleArtwork(bottle.product,format);
+   if(url===bottleArtwork(bottle.product,format,true))return;
+   detailLoader.load(url,texture=>{
+    if(stopped){texture.dispose();return;}
+    texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=renderer.capabilities.getMaxAnisotropy();
+    bottle.detailTextures[format]=texture;resources.push(texture);textureChanged=true;
+   });
+  };
+  const a=new THREE.Vector3(),b=new THREE.Vector3(),label=new THREE.Vector3();
   element.addEventListener('pointerdown',pointerDown);element.addEventListener('pointermove',pointerMove);window.addEventListener('pointerup',pointerUp);window.addEventListener('pointercancel',pointerCancel);element.addEventListener('click',clickCapture,true);if(!structured)element.addEventListener('wheel',wheel,{passive:false});
   const animate=now=>{
-   if(stopped)return;animationFrame=requestAnimationFrame(animate);const elapsed=now-lastTime,dt=Math.min(elapsed/1000,.1);lastTime=now;element.dataset.frameMs=elapsed.toFixed(1);
+   if(stopped)return;animationFrame=requestAnimationFrame(animate);const elapsed=now-lastTime,dt=Math.min(elapsed/1000,.055);lastTime=now;
    const config=props.current,selected=items.findIndex(p=>p.id===config.selectedId),key=`${config.index}:${config.selectedId}:${width}:${height}`;
    if(document.hidden||(!inView&&selected<0))return;
    const previousProgress=homeProgress;
-   if(config.revealProgressRef&&selected<0){const target=clampReveal(config.revealProgressRef.current);homeProgress=THREE.MathUtils.damp(homeProgress,target,12,dt);if(Math.abs(homeProgress-target)<.0001)homeProgress=target;}
+   if(config.revealProgressRef&&selected<0){const target=clampReveal(config.revealProgressRef.current);homeProgress=THREE.MathUtils.damp(homeProgress,target,16,dt);if(Math.abs(homeProgress-target)<.0001)homeProgress=target;}
+   const idleHome=config.revealProgressRef&&readyNotified&&!motion&&!textureChanged&&!lampsSettling&&homeProgress===previousProgress&&renderedKey===key&&renderedHover===config.hovered&&renderedFormat===config.selectedFormat&&renderedInteraction===config.interactionEnabled&&!bottles.some(bottle=>bottle.transition);
+   if(idleHome){
+    if(renderedScrollY!==scrollY){renderedScrollY=scrollY;config.onRevealProgress?.(homeProgress,false);}
+    return;
+   }
+   textureChanged=false;
    const story=config.revealProgressRef?homeStoryState(selected>=0?1:homeProgress,items.length,width,height):null;
    if(!hero&&story&&plateReady&&bottles[heroIndex]?.textures.oil){
     try{
@@ -191,14 +217,7 @@ export default function SceneGallery({items,index,selectedId,selectedFormat='oil
    if(motion){if((layout==='shelf'||story)&&selected<0){const pose=widePose(config,width,height,story);motion.to.fromArray(pose.position);motion.toLook.fromArray(pose.target);}const t=Math.min((now-motion.start)/motion.duration,1),e=cameraEase(t);camera.position.lerpVectors(motion.from,motion.to,e);look.lerpVectors(motion.fromLook,motion.toLook,e);if(t>=1){const notify=motion.notify;motion=null;if(notify)props.current.onMotion?.(false);}}
    if((layout==='shelf'||story)&&selected<0&&!motion){const pose=widePose(config,width,height,story);camera.position.fromArray(pose.position);look.fromArray(pose.target);}
    camera.lookAt(look);camera.updateMatrixWorld();
-   const inStory=story&&selected<0&&homeProgress<.998;
-   const quality=inStory?Math.min(devicePixelRatio,width>760?1.35:1.2):innerWidth>700?2:Math.min(devicePixelRatio,1.5);
-   if(renderer.getPixelRatio()!==quality){renderer.setPixelRatio(quality);renderer.setSize(width,height,false);heroStillFrame=false;}
-   // Retain a completed stone/product frame while the entrance and scroll rest.
-   if(inStory&&!motion&&heroStillFrame&&readyNotified&&homeProgress===previousProgress){element.dataset.renderMode='retained-frame';return;}
-   heroStillFrame=!!inStory&&!motion;
-   element.dataset.renderMode='live-scene';
-   bottles.forEach(bottle=>{
+   bottles.forEach((bottle,i)=>{
     const isSelected=config.selectedId===bottle.id,format=config.selectedFormat;
     const animateSwitch=(!config.selectedId||isSelected)&&!reduced.matches&&bottle.activeFormat&&bottle.textures[format];
     if(!animateSwitch){bottle.transition=null;bottle.activeFormat=bottle.textures[format]?format:'oil';}
@@ -214,22 +233,36 @@ export default function SceneGallery({items,index,selectedId,selectedFormat='oil
      from=transition.from;to=transition.to;blend=pose.blend;depth=pose.depth;
      if(pose.complete){bottle.activeFormat=to;bottle.transition=null;from=to;blend=0;}
     }
-    const source=bottle.textures[from]||bottle.textures.oil,target=bottle.textures[to]||source;
+    if(story&&isSelected&&i!==heroIndex)loadDetail(bottle,format);
+    const source=(isSelected&&bottle.detailTextures[from])||bottle.textures[from]||bottle.textures.oil;
+    const target=(isSelected&&bottle.detailTextures[to])||bottle.textures[to]||source;
     if(source&&target)setBottleBlend(bottle,source,target,blend,NICHE.bottleHeight);
     bottle.formatOpacity=1;bottle.material.opacity=source?1:0;
-    bottle.mesh.position.y=bottle.baseY;bottle.mesh.position.z=bottle.baseZ+depth;
+    bottle.mesh.position.set(bottle.baseX,bottle.baseY,bottle.baseZ+depth);
     bottle.mesh.rotation.y=0;bottle.mesh.scale.y=1;
-    const zone=zoneRefs.current.get(bottle.id);if(zone)zone.dataset.bottleFormat=bottle.activeFormat;
+    const zone=config.interactionEnabled&&zoneRefs.current.get(bottle.id);if(zone&&zone.dataset.bottleFormat!==bottle.activeFormat)zone.dataset.bottleFormat=bottle.activeFormat;
    });
    element.dataset.bottleFormat=config.selectedFormat;
    element.dataset.formatMotion=bottles.some(bottle=>bottle.transition)?'switching':'settled';
-   lamps.forEach((lamp,i)=>{const lit=lamp.id===(config.selectedId||(config.interactionEnabled?config.hovered:null));lamp.energy=THREE.MathUtils.damp(lamp.energy,lit?1:0,lit?9:7,dt);if(lit)activeLamp=lamp;lamp.bulbMaterial.color.setRGB(.07+lamp.energy*.10,.15+lamp.energy*.65,.10+lamp.energy*.25);lamp.glowMat.opacity=.03+lamp.energy*.65;lamp.beamMat.uniforms.strength.value=.005+lamp.energy*.09;const target=config.selectedId&&lamp.id!==config.selectedId?.012:lit?1:.56;const value=THREE.MathUtils.damp(bottles[i].brightness,target,lit?9:7,dt);bottles[i].brightness=value;bottles[i].material.color.setRGB(value,value,value);if(bottles[i].reflectionMaterial)bottles[i].reflectionMaterial.mat.uniforms.brightness.value=value*bottles[i].formatOpacity;const zone=zoneRefs.current.get(lamp.id);if(zone)zone.dataset.illumination=value.toFixed(3);});
+   lampsSettling=false;
+   lamps.forEach((lamp,i)=>{const lit=lamp.id===(config.selectedId||(config.interactionEnabled?config.hovered:null));lamp.energy=THREE.MathUtils.damp(lamp.energy,lit?1:0,lit?9:7,dt);if(lit)activeLamp=lamp;lamp.bulbMaterial.color.setRGB(.07+lamp.energy*.10,.15+lamp.energy*.65,.10+lamp.energy*.25);lamp.glowMat.opacity=.03+lamp.energy*.65;lamp.beamMat.uniforms.strength.value=.005+lamp.energy*.09;const target=config.selectedId&&lamp.id!==config.selectedId?.012:lit?1:.56;const value=THREE.MathUtils.damp(bottles[i].brightness,target,lit?9:7,dt);lampsSettling||=Math.abs(value-target)>.001||Math.abs(lamp.energy-(lit?1:0))>.001;bottles[i].brightness=value;bottles[i].material.color.setRGB(value,value,value);if(bottles[i].reflectionMaterial)bottles[i].reflectionMaterial.mat.uniforms.brightness.value=value*bottles[i].formatOpacity;const zone=config.interactionEnabled&&zoneRefs.current.get(lamp.id);if(zone)zone.dataset.illumination=value.toFixed(3);});
    if(activeLamp){activeSpot.position.set(activeLamp.x,activeLamp.y+5.36*activeLamp.scale,-.45);activeSpot.target.position.set(activeLamp.x,activeLamp.y+.73*activeLamp.scale,-.62);activeBacklight.position.set(activeLamp.x,activeLamp.y+3.6*activeLamp.scale,-.28);activeSpot.intensity=activeLamp.energy*46;activeBacklight.intensity=activeLamp.energy*5;}
    if(story){
     room.visible=story.storyOpacity<.999;
     if(hero){
      const first=bottles[heroIndex],showActor=story.shelfArtwork<1;
      hero.root.visible=showActor;first.mesh.visible=story.shelfArtwork>0;first.material.opacity*=story.shelfArtwork;
+     if(showActor&&first.mesh.visible){
+      // Move the artwork along the view ray so it can cover the 3D glass without a shift in its projection.
+      const depth=.465*first.cellScale*story.bottle.depthScale*(1-smoothRange(.82,1,story.shelfArtwork));
+      const z=story.bottle.position[2],scale=1-depth/(camera.position.z-z);
+      first.mesh.position.set(
+       camera.position.x+(first.baseX-camera.position.x)*scale,
+       (camera.position.y+(first.baseY*first.cellScale-camera.position.y)*scale)/first.cellScale,
+       z+depth
+      );
+      first.mesh.scale.x*=scale;first.mesh.scale.y=scale;
+     }
      if(first.reflectionMaterial)first.reflectionMaterial.mat.uniforms.brightness.value*=story.shelfArtwork;
      if(showActor){hero.update(story);hero.setBrightness(1-(1-story.storyLight)*(1-first.brightness));}
      formation.update(story);heroStream.root.visible=formation.root.visible;
@@ -237,13 +270,22 @@ export default function SceneGallery({items,index,selectedId,selectedFormat='oil
      element.dataset.heroFill=story.fill.toFixed(3);element.dataset.heroStream=story.stream.toFixed(3);
     }
     heroGraze.intensity=2.4*story.storyLight;
-    floor.visible=!stacked&&(homeProgress>.91||selected>=0);
+    floor.material.uniforms.uReflection.value=selected>=0?1:smoothRange(.94,1,homeProgress);
+    floor.visible=!stacked&&floor.material.uniforms.uReflection.value>.001;
     element.dataset.revealProgress=homeProgress.toFixed(4);config.onRevealProgress?.(homeProgress,!!motion);
    }
    element.dataset.motion=motion?'moving':'settled';element.dataset.view=selected>=0?'detail':'gallery';
-   floor.material.uniforms.uTime.value=reduced.matches?0:now*.001;
-   zones.forEach(zone=>{const el=zoneRefs.current.get(zone.id);if(!el)return;const a=zone.corners[0].clone().project(camera),b=zone.corners[1].clone().project(camera),left=(a.x*.5+.5)*width,top=(-a.y*.5+.5)*height,right=(b.x*.5+.5)*width,bottom=(-b.y*.5+.5)*height;const visible=right>0&&left<width&&selected<0;el.style.display=visible?'block':'none';if(visible){const label=zone.labelPoint.clone().project(camera);el.style.setProperty('--label-center',`${(label.x*.5+.5)*width-left}px`);el.style.setProperty('--label-width',`${Math.max(70,(right-left)*1.06)}px`);el.style.transform=`translate3d(${left}px,${top}px,0)`;el.style.width=`${right-left}px`;el.style.height=`${bottom-top}px`;}});
-   renderer.render(scene,camera);if(hero)element.dataset.heroActorReady='true';if(!renderedOnce){renderedOnce=true;setLoaded(true);}if(renderedOnce&&assetsReady&&(!story||hero)&&!readyNotified){readyNotified=true;props.current.onReady?.();}
+   if(!story||config.interactionEnabled)zones.forEach(zone=>{const el=zoneRefs.current.get(zone.id);if(!el)return;a.copy(zone.corners[0]).project(camera);b.copy(zone.corners[1]).project(camera);const left=(a.x*.5+.5)*width,top=(-a.y*.5+.5)*height,right=(b.x*.5+.5)*width,bottom=(-b.y*.5+.5)*height;const visible=right>0&&left<width&&selected<0;el.style.display=visible?'block':'none';if(visible){label.copy(zone.labelPoint).project(camera);el.style.setProperty('--label-center',`${(label.x*.5+.5)*width-left}px`);el.style.setProperty('--label-width',`${Math.max(70,(right-left)*1.06)}px`);el.style.transform=`translate3d(${left}px,${top}px,0)`;el.style.width=`${right-left}px`;el.style.height=`${bottom-top}px`;}});
+   if(hero&&assetsReady&&!warmStarted){
+    warmStarted=true;
+    if(!stacked)renderer.initRenderTarget(floor.getRenderTarget());
+    renderer.compileAsync(scene,camera).catch(()=>{});
+   }
+   renderer.render(scene,camera);
+   renderedKey=key;renderedHover=config.hovered;renderedFormat=config.selectedFormat;renderedInteraction=config.interactionEnabled;renderedScrollY=scrollY;
+   if(hero&&!element.dataset.heroActorReady)element.dataset.heroActorReady='true';
+   if(!renderedOnce){renderedOnce=true;setLoaded(true);}
+   if(assetsReady&&(!story||hero)&&!readyNotified){readyNotified=true;props.current.onReady?.();renderedKey='';}
   };
   animationFrame=requestAnimationFrame(animate);engine.current={renderer,scene,camera};
   return()=>{stopped=true;cancelAnimationFrame(animationFrame);observer.disconnect();visibilityObserver?.disconnect();renderer.domElement.removeEventListener('webglcontextlost',contextLost);element.removeEventListener('pointerdown',pointerDown);element.removeEventListener('pointermove',pointerMove);window.removeEventListener('pointerup',pointerUp);window.removeEventListener('pointercancel',pointerCancel);element.removeEventListener('click',clickCapture,true);if(!structured)element.removeEventListener('wheel',wheel);floor.dispose();resources.forEach(r=>r.dispose?.());renderer.dispose();renderer.domElement.remove();};

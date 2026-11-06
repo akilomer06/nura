@@ -77,17 +77,17 @@ export function homeStoryState(value,count,width,height){
  else camera=mixCamera(opening,macro,smoothRange(.055,.205,progress));
  return {
   camera, environment, openingBottlePosition, source,
-  bottle:{position,rotation:[0,0,0],scale:1+(cell.scale-1)*move},
+  bottle:{position,rotation:[0,0,0],scale:1+(cell.scale-1)*move,depthScale:1-.94*smoothRange(.925,.965,progress)},
   cap:{offset:[(compact?.33:.63)*free+(compact?1.97:.45)*stow,.24*thread+.57*free+(compact?3.6:1.95)*stow,0-(compact?.26:.12)*free],rotation:[.15*free,Math.PI*3*thread+.57*free,0-.23*free]},
   capTrail:Math.max(smoothRange(.135,.17,progress)*(1-smoothRange(.265,.325,progress)),smoothRange(.718,.75,progress)*(1-smoothRange(.781,.81,progress))),
   trailPhase:progress<.5?twist:thread,
   fill:smoothRange(.49,.689,progress),
   stream:smoothRange(.397,.444,progress)*(1-smoothRange(.662,.703,progress)),
-  streamReach:smoothRange(.405,.489,progress),streamDrain:smoothRange(.651,.701,progress),
+  streamReach:smoothRange(.423,.489,progress),streamDrain:smoothRange(.651,.701,progress),
   runoff:smoothRange(.34,.423,progress),runoffOpacity:1-smoothRange(.642,.688,progress),
   storyOpacity:1-smoothRange(.805,.931,progress),
   storyLight:1-smoothRange(.82,.996,progress),
-  shelfArtwork:smoothRange(.979,.998,progress)
+  shelfArtwork:smoothRange(.939,.994,progress)
  };
 }
 export const homeRevealPose=(value,count,width,height)=>homeStoryState(value,count,width,height).camera;

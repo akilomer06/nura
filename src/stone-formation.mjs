@@ -8,7 +8,8 @@ export function createStoneFormation({plate,resources}){
  const own=v=>{resources.push(v);return v;};
  const mat=own(new THREE.MeshBasicMaterial({map:plate,toneMapped:false,fog:false}));
  const geo=own(new THREE.PlaneGeometry(1,1,48,32)),positions=geo.getAttribute('position'),uv=geo.getAttribute('uv');
- const env=new THREE.Mesh(geo,mat);root.add(env);
+ const dissolve=own(new THREE.MeshBasicMaterial({map:plate,toneMapped:false,fog:false,transparent:true,depthWrite:false}));
+ const env=new THREE.Mesh(geo,mat),fade=new THREE.Mesh(geo,dissolve);root.add(env,fade);
  let lastKey='',width=1,height=1;
  const {foot,lip,ledgeRise}=HERO_CONFIG.mountain;
  const surface=(u,v)=>.22+.045*Math.sin(u*23)*Math.sin(v*17)+.055*THREE.MathUtils.smoothstep(u,.70,.94);
@@ -27,8 +28,6 @@ export function createStoneFormation({plate,resources}){
   }
   root.position.set(state.openingBottlePosition[0],state.openingBottlePosition[1],0);
   root.visible=state.storyOpacity>.001;
-  const fading=state.storyOpacity<.999;
-  if(mat.transparent!==fading){mat.transparent=fading;mat.depthWrite=!fading;mat.needsUpdate=true;}
-  mat.opacity=state.storyOpacity;
+  env.visible=state.storyOpacity>=.999;fade.visible=!env.visible;dissolve.opacity=state.storyOpacity;
  }};
 }

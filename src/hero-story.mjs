@@ -32,6 +32,7 @@ export function homeRevealLayers(value) {
  return {
   chapter,
   captionOpacity: enter * leave * (1 - smoothRange(.842, .887, progress)),
+  brandOpacity: 1 - smoothRange(.88, .95, progress),
   collectionOpacity: smoothRange(.95, 1, progress),
   selectionReady: progress >= .999
  };

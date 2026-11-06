@@ -42,7 +42,11 @@ test('Althaïr clears the shelf face before it slides into the first responsive 
     assert.equal(bottle.position[0],cell.x);
     assert.equal(bottle.position[1],cell.y+.75*cell.scale);
    }
-   if(shelfArtwork>0)assert.ok(Math.abs(bottle.position[2]-NICHE.bottleZ)<.14);
+   if(shelfArtwork>0){
+    assert.equal(bottle.position[0],cell.x);
+    assert.equal(bottle.position[1],cell.y+.75*cell.scale);
+   }
+   if(shelfArtwork===1)assert.ok(Math.abs(bottle.position[2]-NICHE.bottleZ)<.01);
   }
  }
 });

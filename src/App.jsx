@@ -71,7 +71,7 @@ function HomeExperience({format,selectedFormat,selectedId,onSceneMotion}){
   const layers=homeRevealLayers(value),outro=selection.current?0:metrics.current.outro;
   story.current?.setProgress(value,layers);
   track.current.style.setProperty('--home-progress',String(value));
-  track.current.style.setProperty('--home-brand-opacity',String(1-layers.collectionOpacity));
+  track.current.style.setProperty('--home-brand-opacity',String(layers.brandOpacity));
   track.current.style.setProperty('--home-edit-opacity',String(layers.collectionOpacity*(1-outro)*(cameraMoving?0:1)));
   track.current.style.setProperty('--home-label-opacity',String(layers.collectionOpacity));
   track.current.dataset.revealProgress=value.toFixed(4);

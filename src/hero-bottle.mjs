@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import {smoothRange} from './hero-story.mjs';
 
 export function createBottleEnvironment(renderer,resources){
  const studio=new THREE.Scene();studio.background=new THREE.Color(0x514939);
@@ -91,10 +92,11 @@ export function createHeroBottle({texture,environment,resources}){
   fragmentShader:'varying float t; uniform float strength; uniform float head; void main(){float a=smoothstep(0.,.17,t)*(1.-smoothstep(.81,1.,t))*exp(-pow((t-head)*2.4,2.));gl_FragColor=vec4(.98,.73,.32,a*strength);}' }));
  const trail=mesh(new THREE.TubeGeometry(arc,64,.006,6,false),trailMaterial);
  return {root,setBrightness:value=>{exposure.value=value;},update(state){
-  visibility.value=1-state.shelfArtwork;
+  visibility.value=1-smoothRange(.76,1,state.shelfArtwork);
   const treatment=state.storyLight;
   rimMaterial.opacity=.55*treatment;rim.visible=treatment>.001;
-  root.position.fromArray(state.bottle.position);root.rotation.set(...state.bottle.rotation);root.scale.setScalar(state.bottle.scale);
+  const {position,rotation,scale,depthScale}=state.bottle;
+  root.position.fromArray(position);root.rotation.set(...rotation);root.scale.set(scale,scale,scale*depthScale);
   cap.position.set(state.cap.offset[0],2.15+state.cap.offset[1],state.cap.offset[2]);cap.rotation.set(...state.cap.rotation,'ZXY');
   trail.visible=state.capTrail>.001;trailMaterial.uniforms.strength.value=state.capTrail*.54;trailMaterial.uniforms.head.value=state.trailPhase;
   level.value=-.865+1.73*state.fill;liquid.visible=surface.visible=state.fill>.001;
