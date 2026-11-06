@@ -4,6 +4,7 @@ export const HERO_CONFIG = {
  holdScreens: .4,
  product: 'althair-pdm',
  backdrop: '/assets/story-environment-v4.webp',
+ mountain: {foot: .18, lip: .73, ledgeRise: .044},
  phases: [
   {start: 0, name: 'origin', eyebrow: 'NURA BY BIN SADHIK · ALTHAÏR', title: 'Essence of the Mountain', description: 'An empty vessel waits on the stone. Follow Althaïr from the first drop to the fragrance shelf.'},
   {start: .14, name: 'opening', eyebrow: '01 / THE AWAKENING', title: 'The vessel opens', description: 'Gold lifts from the glass, and the mountain comes into focus.'},

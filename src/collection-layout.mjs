@@ -49,13 +49,14 @@ export function homeStoryState(value,count,width,height){
  const openingBottlePosition=[x,baseY,bottleZ];
  const environmentHeight=(openingDistance+bottleZ-.22)*frustum;
  const environment={height:environmentHeight,width:Math.max(16/9,aspect*1.13)*environmentHeight};
- const source=[x-.035,baseY+environmentHeight*.55,.24];
+ const {foot,lip,ledgeRise}=HERO_CONFIG.mountain;
+ const source=[x-.035,baseY+environmentHeight*(lip-foot+ledgeRise),.24];
  const shot=(viewHeight,y,bottleScreenX)=>{
   const cx=x-(bottleScreenX-.5)*viewHeight*aspect;
   return {position:[cx,y,viewHeight/frustum+bottleZ],target:[cx,y,0]};
  };
  const opening=shot(openingHeight,baseY+openingHeight*(compact?.385:.33),compact?.595:.72);
- const macro=shot(openingHeight*(compact?.68:.54),baseY+(compact?2.7:2.68),compact?.565:.73);
+ const macro=shot(openingHeight*(compact?.74:.63),baseY+(compact?2.7:2.68),compact?.565:.73);
  const pourHeight=openingHeight*(compact?1.10:.88);
  const pour=shot(pourHeight,baseY+pourHeight*(compact?.37:.39),compact?.585:.71);
  const cell=displayCell(0,'featured',count,width);
