@@ -77,16 +77,18 @@ export default function SceneGallery({items,index,selectedId,selectedFormat='oil
   };
   const total=(structured?spec.columns:Math.max(1,items.length))*NICHE.stride,center=((structured?spec.columns:items.length)-1)*NICHE.stride/2;
   const bottom=-(spec.rows-1)*ROW_PITCH,wallHeight=spec.rows*ROW_PITCH+18;
+  // Leave clearance between the relief above the display and the mountain during their crossfade.
+  const upperWallDepth=revealProgressRef?-.50:-.46;
   box(total+50,wallHeight,.45,center,bottom/2+3,-1.25,back);
   if(stacked||layout==='shelf'){
-   box(total+50,revealProgressRef?13.745:6,1.2,center,revealProgressRef?11.1275:7,-.46,front,!!revealProgressRef);
+   box(total+50,revealProgressRef?13.745:6,1.2,center,revealProgressRef?11.1275:7,upperWallDepth,front,!!revealProgressRef);
    for(let row=0;row<spec.rows;row++)box(total+.9,.65,1.2,center,-row*ROW_PITCH+3.93,-.46,front);
    // Finish the wall below each ledge so captions sit on continuous stone,
    // instead of the dark rectangular gaps left between the shelf rows.
    if(layout==='shelf')for(let row=0;row<spec.rows;row++)box(total+.9,.78,1.2,center,-row*ROW_PITCH+NICHE.bottom*spec.scale-.39,-.46,front);
    if(layout==='shelf')for(let col=0;col<=spec.columns;col++)box(NICHE.stride-NICHE.width,wallHeight,1.2,col*NICHE.stride-NICHE.stride/2,bottom/2+2,-.46,front);
    box(total+50,1.5,1.3,center,bottom-.35,-.45,front);
-  }else{box(total+50,revealProgressRef?12.43:3.3,1.2,center,revealProgressRef?11.785:7.22,-.46,front,!!revealProgressRef);box(total+50,.65,1.3,center,.28,-.45,front);}
+  }else{box(total+50,revealProgressRef?12.43:3.3,1.2,center,revealProgressRef?11.785:7.22,upperWallDepth,front,!!revealProgressRef);box(total+50,.65,1.3,center,.28,-.45,front);}
   box(12,wallHeight,1.2,-7.6,bottom/2+4,-.46,front);box(12,wallHeight,1.2,(structured?spec.columns-1:items.length-1)*NICHE.stride+7.6,bottom/2+4,-.46,front);
   const heroGraze=new THREE.DirectionalLight(0xd6dac6,0);heroGraze.position.set(center-4,8.8,1.4);heroGraze.target.position.set(center,7.2,.14);if(revealProgressRef)scene.add(heroGraze,heroGraze.target);
   const glowCanvas=document.createElement('canvas');glowCanvas.width=64;glowCanvas.height=64;
